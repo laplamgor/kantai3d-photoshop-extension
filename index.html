@@ -1,0 +1,281 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/styles.css"/>
+<link id="hostStyle" rel="stylesheet" href="css/theme.css"/>
+<title>Template Extension</title>
+</head>
+<body>
+<!--  <div class="if_base">
+    <button id="aply">OpenDialog</button>
+  </div> -->
+<script src="js/libs/CSInterface.js"></script>
+<script src="js/libs/jquery-2.0.2.min.js"></script>
+<script src="js/themeManager.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.7/pixi.min.js"></script>
+<script src="js/main.js"></script>
+
+<canvas id="canvas"></canvas>
+<!-- <img src='C:/Users/user/AppData/Roaming/Adobe/CEP/extensions/DepthPreview/depth_preview.png'> -->
+<script>
+
+var csInterface = new CSInterface();
+
+var script = `
+
+if (app.documents.length != 0) {
+  var doc= app.activeDocument;
+
+  var opts, file;
+  opts = new ExportOptionsSaveForWeb();
+  opts.format = SaveDocumentType.PNG;
+  opts.PNG8 = false;
+  opts.quality = 100;
+
+  pngFile = new File("`+csInterface.getSystemPath( SystemPath.EXTENSION )+`" + "/depth_preview.png");
+  //pngFile = new File(app.activeDocument.path + "/depth_preview.png");
+  app.activeDocument.exportDocument(pngFile, ExportType.SAVEFORWEB, opts);
+}
+`;
+
+
+
+'use strict';
+PIXI.DepthPerspectiveFilter = new PIXI.Filter(
+`
+#ifdef GL_ES
+precision highp float;
+#endif
+
+attribute vec2 aVertexPosition;
+attribute vec2 aTextureCoord;
+varying vec2 vTextureCoord;
+
+
+uniform mat3 projectionMatrix;
+
+
+void main(void){
+
+    vTextureCoord = aTextureCoord;
+    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+}
+`, 
+`
+precision mediump float;
+uniform vec2 offset;
+
+uniform sampler2D uSampler;
+uniform sampler2D displacementMap;
+
+uniform float frameWidth;
+uniform float frameHeight;
+
+uniform vec4 filterArea;
+uniform vec4 filterClamp;
+
+
+varying vec2 vTextureCoord;
+varying vec4 vColor;
+uniform vec4 dimensions;
+uniform vec2 mapDimensions;
+uniform float scale;
+uniform float focus;
+
+
+vec2 mapCoord2(vec2 coord) {
+  return coord;
+}
+
+const float compression = 1.0;
+const float dmin = 0.0;
+const float dmax = 1.0;
+
+#define MAXSTEPS 600.0
+float steps = max(MAXSTEPS * length(offset), 30.0);
+
+void main(void) {
+
+  float aspect = dimensions.x / dimensions.y;
+  vec2 scale2 =
+      vec2(scale * min(1.0, 1.0 / aspect), scale* min(1.0, aspect)) * vec2(1, -1);
+  mat2 baseVector =
+      mat2(vec2((0.5 - focus) * (offset) - (offset) / 2.0) * scale2,
+           vec2((0.5 - focus) * (offset) + (offset) / 2.0) * scale2);
+
+
+  vec2 pos = (vTextureCoord);
+  mat2 vector = baseVector;
+
+  float dstep = compression / (steps - 1.0);
+  vec2 vstep = (vector[1] - vector[0]) / vec2((steps - 1.0));
+
+  vec2 posSumLast = vec2(0.0);
+  vec2 posSum = vec2(0.0);
+
+  float weigth = 1.0;
+  float dpos;
+  float dposLast;
+
+
+  for (float i = 0.0; i < MAXSTEPS; ++i) {
+    vec2 vpos = pos + vector[1] - i * vstep;
+    dpos = 1.0 - i * dstep;
+
+    float depth = texture2D(displacementMap, mapCoord2(vpos)).r;
+    depth = clamp(depth, dmin, dmax);
+    float confidence;
+
+#define CORRECT 100
+#if CORRECT == 10
+#define CORRECTION_MATH +((vec2((depth - dpos) / (dstep)) * vstep))
+#else
+#define CORRECTION_MATH
+#endif
+
+    if (dpos > depth) {
+      posSumLast = (vpos CORRECTION_MATH);
+      dposLast = dpos;
+    } else {
+      posSum = (vpos CORRECTION_MATH);
+      weigth = (depth - dposLast) / (dstep);
+      break;
+    }
+  };
+
+  gl_FragColor = texture2D(
+      uSampler,
+      (posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum);
+}
+`  );
+
+PIXI.DepthPerspectiveFilter.apply = function(filterManager, input, output)
+{
+  this.uniforms.dimensions = {};
+  if (input && input.sourceFrame && input.size) {
+    this.uniforms.dimensions[0] = input.sourceFrame.width;
+    this.uniforms.dimensions[1] = input.sourceFrame.height;
+    this.uniforms.frameWidth = input.size.width;
+    this.uniforms.frameHeight = input.size.height;
+  }
+  
+
+  // draw the filter...
+  filterManager.applyFilter(this, input, output);
+}
+
+
+const app = new PIXI.Application({
+  view: document.querySelector("#canvas"),
+  width: 50,
+  height: 50
+});
+
+
+var path = csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png";
+
+var result = window.cep.fs.readFile(path);
+
+if (result.err == 0) {
+  //alert(result.data); // displays file content
+} else { 
+  alert("fail" + result.err);
+}
+
+
+//~/AppData/Local/Temp/depth_preview.png
+//http://192.168.1.245/3d.jpg`
+const logo = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
+
+// window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
+window.displacementFilter = PIXI.DepthPerspectiveFilter;
+
+window.displacementFilter.padding = 0﻿;
+
+
+// window.displacementSprite.visible = false;
+
+
+
+
+
+window.displacementFilter.uniforms.displacementMap = PIXI.Texture﻿.fromImage﻿(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
+window.displacementFilter.uniforms.scale = 1.0;
+window.displacementFilter.uniforms.focus = 0.5;
+window.displacementFilter.uniforms.offset = [0.0, 0.0];
+
+
+
+window.displacementFilter.uniforms.offset = [0.0,0.5]
+
+
+//app.stage.filterArea = app.screen;
+logo.filters = [window.displacementFilter];
+app.stage.addChild(logo);
+
+
+
+function step(timestamp) {
+  if (logo && logo.texture && app.renderer.view.style) {
+
+    window.displacementFilter.uniforms.offset = [
+    -(app.renderer.plugins.interaction.mouse.global.x/logo.texture.width)+0.5
+    , (app.renderer.plugins.interaction.mouse.global.y/logo.texture.height)-0.5];
+
+
+    var w = logo.texture.width;
+    var h = logo.texture.height;
+    app.renderer.view.style.width = w + "px";
+    app.renderer.view.style.height = h + "px";
+    app.renderer.resize(w,h);
+
+  }
+  window.requestAnimationFrame(step);
+}
+
+window.requestAnimationFrame(step);
+
+// window.onresize = function (event){    
+// var w = window.innerWidth;    
+// var h = window.innerHeight;    
+// //this part resizes the canvas but keeps ratio the same   
+// app.renderer.view.style.width = w + "px";   
+//   app.renderer.view.style.height = h + "px";   
+//    //this part adjusts the ratio:    
+//    app.renderer.resize(w,h);
+// }
+
+
+csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (id) {
+  
+  register(id); // toolModalStateChanged, almost everything
+
+  function register(eventId) {
+    var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
+    event.data = eventId.toString();
+    var gExtensionID = csInterface.getExtensionID();
+    event.extensionId = gExtensionID;
+    csInterface.dispatchEvent(event);
+
+    csInterface.addEventListener(
+        "com.adobe.PhotoshopJSONCallback" + gExtensionID, 
+        function(e) {
+          csInterface.evalScript(script, function (res) {            
+            var u = csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png?_="+(new Date().getTime());
+            var img = new Image();
+            img.onload = function () {
+              var baseTexture = new PIXI.BaseTexture(img);
+              var texture = new PIXI.Texture(baseTexture);
+              window.displacementFilter.uniforms.displacementMap = texture;
+            }
+            img.src = u;
+          });
+        }
+    );
+  }
+
+});
+</script>
+</body>
+</html>

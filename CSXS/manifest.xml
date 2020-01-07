@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="6.0" ExtensionBundleId="ai.kant.depthpreview" ExtensionBundleVersion="1.0.0"
+		ExtensionBundleName="DepthPreview" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Author><![CDATA[]]></Author>
+	<Abstract><![CDATA[]]></Abstract>
+	<ExtensionList>
+		<Extension Id="ai.kant.depthpreview" Version="1.0.0" />
+	</ExtensionList>
+	<ExecutionEnvironment>
+		<HostList>
+			<!-- Photoshop CC2017->18, CC2015->17, CC2014->16, CC->15 -->
+			<Host Name="PHXS" Version="16.0" />
+			<Host Name="PHSP" Version="16.0" />
+			<!-- Illustrator CC2017->21, CC2015->20, CC2014->19, CC->18 -->
+			<!-- <Host Name="ILST" Version="[18.0,18.9]" />-->
+			<!-- InDesign CC2017->12, CC2015->11, CC2014->10, CC->9 -->
+			<!-- <Host Name="IDSN" Version="[10.0,10.9]" /> -->
+			<!-- InCopy CC2017->12, CC2015->11, CC2014->10, CC->9 -->
+			<!-- <Host Name="AICY" Version="[10.0,10.9]" /> -->
+			<!-- Premiere CC2017->11, CC2015->10, CC2014->9 CC->8 -->
+			<!-- <Host Name="PPRO" Version="[8.0,8.9]" /> -->
+			<!-- AfterEffects CC2017->14, CC2015->13 -->
+			<!-- <Host Name="AEFT" Version="[13.0,13.9]" /> -->
+			<!-- Audition CC2017->8 -->
+			<!-- <Host Name="AUDT" Version="8.0" />   -->
+			<!-- PRELUDE CC2017->6, CC2015->5, CC2014->4, CC->3-->
+			<!-- <Host Name="PRLD" Version="3.0" />   -->
+			<!-- FLASH/Animate Pro CC2017->16, CC2015->15 CC2014->14 -->
+			<!-- <Host Name="FLPR" Version="[14.0,15.9]" /> -->
+		</HostList>
+		<LocaleList>
+			<Locale Code="All" />
+		</LocaleList>
+		<RequiredRuntimeList>
+			<RequiredRuntime Name="CSXS" Version="6.0" />
+		</RequiredRuntimeList>
+	</ExecutionEnvironment>
+	<DispatchInfoList>
+		<Extension Id="ai.kant.depthpreview">
+			<DispatchInfo >
+				<Resources>
+				<MainPath>./index.html</MainPath>
+				<ScriptPath>./jsx/hostscript.jsx</ScriptPath>
+				</Resources>
+				<Lifecycle>
+					<AutoVisible>true</AutoVisible>
+				</Lifecycle>
+				<UI>
+					<Type>Panel</Type>
+					<Menu>Depth Preview</Menu>
+					<Geometry>
+						<Size>
+							<Height>200</Height>
+							<Width>300</Width>
+						</Size>
+					</Geometry>
+				</UI>
+			</DispatchInfo>
+		</Extension>
+	</DispatchInfoList>
+</ExtensionManifest>
