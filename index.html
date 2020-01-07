@@ -191,7 +191,7 @@ window.displacementFilter.uniforms.offset = [0.0, 0.0];
 
 
 
-window.displacementFilter.uniforms.offset = [0.0,0.5]
+window.displacementFilter.uniforms.offset = [0.0,0.0]
 
 
 //app.stage.filterArea = app.screen;
@@ -200,20 +200,34 @@ app.stage.addChild(logo);
 
 
 
+
+
+
+
+
+var mouseIsDown = false;
+window.addEventListener('mousedown', function() {
+  mouseIsDown = true;
+});
+
+window.addEventListener('mouseup', function() {
+  mouseIsDown = false;
+});
+
 function step(timestamp) {
   if (logo && logo.texture && app.renderer.view.style) {
+    var x = -(app.renderer.plugins.interaction.mouse.global.x/logo.texture.width)+0.5;
+    var y = (app.renderer.plugins.interaction.mouse.global.y/logo.texture.height)-0.5;
 
-    window.displacementFilter.uniforms.offset = [
-    -(app.renderer.plugins.interaction.mouse.global.x/logo.texture.width)+0.5
-    , (app.renderer.plugins.interaction.mouse.global.y/logo.texture.height)-0.5];
-
+    if (mouseIsDown && x > -1.0 && x < 1.0 && y > -1.0 && y < 1.0) {
+      window.displacementFilter.uniforms.offset = [x, y];
+    }
 
     var w = logo.texture.width;
     var h = logo.texture.height;
     app.renderer.view.style.width = w + "px";
     app.renderer.view.style.height = h + "px";
     app.renderer.resize(w,h);
-
   }
   window.requestAnimationFrame(step);
 }
