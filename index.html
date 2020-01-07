@@ -15,15 +15,13 @@
 <script src="js/themeManager.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.7/pixi.min.js"></script>
 <script src="js/main.js"></script>
-
 <canvas id="canvas"></canvas>
-<!-- <img src='C:/Users/user/AppData/Roaming/Adobe/CEP/extensions/DepthPreview/depth_preview.png'> -->
 <script>
+'use strict';
 
 var csInterface = new CSInterface();
 
 var script = `
-
 if (app.documents.length != 0) {
   var doc= app.activeDocument;
 
@@ -41,7 +39,6 @@ if (app.documents.length != 0) {
 
 
 
-'use strict';
 PIXI.DepthPerspectiveFilter = new PIXI.Filter(
 `
 #ifdef GL_ES
@@ -186,7 +183,7 @@ if (result.err == 0) {
 
 //~/AppData/Local/Temp/depth_preview.png
 //http://192.168.1.245/3d.jpg`
-const logo = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
+var logo = new PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
 
 // window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
 window.displacementFilter = PIXI.DepthPerspectiveFilter;
@@ -247,10 +244,21 @@ window.requestAnimationFrame(step);
 // }
 
 
-csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (id) {
-  
-  register(id); // toolModalStateChanged, almost everything
+// Load the image as the default
+csInterface.evalScript("app.activeDocument.fullName.parent.fsName.replace(/\\\\/g, '/')", function (path) {
+  var url = path  +  "/base_preview.png?_="+(new Date().getTime());
+  var img = new Image();
+  img.onload = function () {
+    var baseTexture = new PIXI.BaseTexture(img);
+    var texture = new PIXI.Texture(baseTexture);
+    logo.setTexture(texture);
+  }
+  img.src = url;
+});
 
+
+csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (id) {
+  register(id); // toolModalStateChanged, almost everything
   function register(eventId) {
     var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
     event.data = eventId.toString();
@@ -274,8 +282,13 @@ csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (
         }
     );
   }
-
 });
+
+
+
+
+
+
 </script>
 </body>
 </html>
