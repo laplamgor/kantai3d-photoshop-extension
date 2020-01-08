@@ -202,25 +202,62 @@ app.stage.addChild(logo);
 
 
 
-
+var startx;
+var starty;
 
 
 var mouseIsDown = false;
-window.addEventListener('mousedown', function() {
-  mouseIsDown = true;
+window.addEventListener('mousedown', function(event) {
+  switch (event.which) {
+    case 1:
+      startx = app.renderer.plugins.interaction.mouse.global.x;
+      starty = app.renderer.plugins.interaction.mouse.global.y;
+      mouseIsDown = true;
+      break;
+    case 2:
+      alert('Middle Mouse button pressed.');
+      break;
+    case 3:
+      alert('Right Mouse button pressed.');
+      break;
+    default:
+      alert('You have a strange Mouse!');
+  }
 });
 
-window.addEventListener('mouseup', function() {
-  mouseIsDown = false;
+window.addEventListener('mouseup', function(event) {
+  switch (event.which) {
+    case 1:
+      mouseIsDown = false;
+      break;
+    case 2:
+      alert('Middle Mouse button pressed.');
+      break;
+    case 3:
+      alert('Right Mouse button pressed.');
+      break;
+    default:
+      alert('You have a strange Mouse!');
+    }
 });
 
 function step(timestamp) {
   if (logo && logo.texture && app.renderer.view.style) {
-    var x = -(app.renderer.plugins.interaction.mouse.global.x/logo.texture.width)+0.5;
-    var y = (app.renderer.plugins.interaction.mouse.global.y/logo.texture.height)-0.5;
 
-    if (mouseIsDown && x > -1.0 && x < 1.0 && y > -1.0 && y < 1.0) {
-      window.displacementFilter.uniforms.offset = [x, y];
+
+
+    var endx = app.renderer.plugins.interaction.mouse.global.x;
+    var endy = app.renderer.plugins.interaction.mouse.global.y;
+
+    if (mouseIsDown) {
+      window.displacementFilter.uniforms.offset[0] -= ((endx - startx) / logo.texture.width * 2);
+      window.displacementFilter.uniforms.offset[1] += ((endy - starty) / logo.texture.height * 2);
+
+      window.displacementFilter.uniforms.offset[0] = Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 0.5), -0.5);
+      window.displacementFilter.uniforms.offset[1] = Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 0.5), -0.5);
+
+      startx = endx;
+      starty = endy;
     }
 
     var w = logo.texture.width;
