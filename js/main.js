@@ -1,18 +1,22 @@
-(function() {
-  'use strict';
-
-  var csInterface = new CSInterface();
-
-  function init() {
-    themeManager.init();
-    $("#aply").click(function() {
-      var result = window.cep.fs.showOpenDialog(false, false, "Test Dialog", "", ["png", "jpg"]);
-      alert(result.data);
-    });
+(function ()
+{
+    'use strict';
 
     var csInterface = new CSInterface();
 
-    var script = `
+    function init()
+    {
+        themeManager.init();
+        $("#aply").click(function ()
+        {
+            var result = window.cep.fs.showOpenDialog(false, false, "Test Dialog", "", ["png", "jpg"]);
+            alert(result.data);
+        }
+        );
+
+        var csInterface = new CSInterface();
+
+        var script = `
 if (app.documents.length != 0) {
   var doc= app.activeDocument;
 
@@ -25,10 +29,10 @@ if (app.documents.length != 0) {
   //pngFile = new File(app.activeDocument.path + "/depth_preview.png");
   app.activeDocument.exportDocument(pngFile, ExportType.SAVEFORWEB, opts);
 }
-`;
+            `;
 
-    PIXI.DepthPerspectiveFilter = new PIXI.Filter(
-      `
+        PIXI.DepthPerspectiveFilter = new PIXI.Filter(
+                `
 #ifdef GL_ES
 precision highp float;
 #endif
@@ -39,12 +43,13 @@ varying vec2 vTextureCoord;
 
 uniform mat3 projectionMatrix;
 
-void main(void){
-  vTextureCoord = aTextureCoord;
-  gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+void main(void)
+{
+    vTextureCoord = aTextureCoord;
+    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
 }
-`,
-      `
+                `, 
+                `
 precision mediump float;
 uniform vec2 offset;
 uniform vec2 pan;
@@ -71,14 +76,29 @@ uniform float scale;
 uniform float focus;
 
 
-vec2 mapPan(vec2 coord) {
-  return vec2((coord[0]  + pan[0] / textureWidth / textureScale) / zoom,
-              (coord[1] + pan[1] / textureHeight / textureScale) / zoom);
+vec2 mapPan(vec2 coord)
+{
+    return vec2((coord[0]  + pan[0] / textureWidth / textureScale) / zoom,
+                (coord[1] + pan[1] / textureHeight / textureScale) / zoom);
 }
 
-vec2 mapCoord2(vec2 coord) {
-  return vec2(coord[0] * frameWidth / textureWidth / textureScale,
-              coord[1] * frameHeight / textureHeight / textureScale);
+vec2 mapCoord2(vec2 coord)
+{
+    return vec2(coord[0] * frameWidth / textureWidth / textureScale,
+                coord[1] * frameHeight / textureHeight / textureScale);
+}
+
+vec4 grid(vec2 coord)
+{
+    if (mod(coord[0], 0.08) < 0.002 || mod(coord[1], 0.08) < 0.002)
+    {
+        return vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    if (mod(coord[0], 0.008) < 0.001 || mod(coord[1], 0.008) < 0.001)
+    {
+        return vec4(0.5, 0.5, 0.5, 0.5);
+    }
+    return vec4(0.0, 0.0, 0.0, 1.0);
 }
 
 const float compression = 1.0;
@@ -91,266 +111,304 @@ const float dmax = 1.0;
 #define MAXZOOM 11.0
 
 #define MAXSTEPS 600.0
-float steps = max(MAXSTEPS * length(offset * zoom), 30.0);
+float steps = max(MAXSTEPS *length(offset *zoom), 30.0);
 
-void main(void) {
-  float aspect = dimensions.x / dimensions.y;
-  vec2 scale2 =
-      vec2(scale * min(1.0, 1.0 / aspect), scale* min(1.0, aspect)) * vec2(1, -1);
-  mat2 baseVector =
-      mat2(vec2((0.5 - focus) * (offset * zoom) - (offset * zoom) / 2.0) * scale2,
-           vec2((0.5 - focus) * (offset * zoom) + (offset * zoom) / 2.0) * scale2);
+void main(void)
+{
+    float aspect = dimensions.x / dimensions.y;
+    vec2 scale2 =
+        vec2(scale * min(1.0, 1.0 / aspect), scale * min(1.0, aspect)) * vec2(1, -1);
+    mat2 baseVector =
+        mat2(vec2((0.5 - focus) * (offset * zoom) - (offset * zoom) / 2.0) * scale2,
+             vec2((0.5 - focus) * (offset * zoom) + (offset * zoom) / 2.0) * scale2);
 
 
-  vec2 pos = (vTextureCoord);
-  mat2 vector = baseVector;
+    vec2 pos = (vTextureCoord);
+    mat2 vector = baseVector;
 
-  float dstep = compression / (steps - 1.0);
-  vec2 vstep = (vector[1] - vector[0]) / vec2((steps - 1.0));
+    float dstep = compression / (steps - 1.0);
+    vec2 vstep = (vector[1] - vector[0]) / vec2((steps - 1.0));
 
-  vec2 posSumLast = vec2(0.0);
-  vec2 posSum = vec2(0.0);
+    vec2 posSumLast = vec2(0.0);
+    vec2 posSum = vec2(0.0);
 
-  float weigth = 1.0;
-  float dpos;
-  float dposLast;
+    float weigth = 1.0;
+    float dpos;
+    float dposLast;
 
-  for (float i = 0.0; i < MAXSTEPS * MAXOFFSETLENGTH * MAXZOOM; ++i) {
-    vec2 vpos = pos + vector[1] - i * vstep;
-    dpos = 1.0 - i * dstep;
+    for (float i = 0.0; i < MAXSTEPS * MAXOFFSETLENGTH * MAXZOOM; ++i)
+    {
+        vec2 vpos = pos + vector[1] - i * vstep;
+        dpos = 1.0 - i * dstep;
 
-    float depth = texture2D(displacementMap, mapPan(mapCoord2(vpos))).r;
-    depth = clamp(depth, dmin, dmax);
+        float depth = texture2D(displacementMap, mapPan(mapCoord2(vpos))).r;
+        depth = clamp(depth, dmin, dmax);
 
-    if (dpos > depth) {
-      posSumLast = vpos;
-      dposLast = dpos;
-    } else {
-      posSum = vpos;
-      weigth = (depth - dposLast) / dstep;
-      break;
-    }
-  };
+        if (dpos > depth)
+        {
+            posSumLast = vpos;
+            dposLast = dpos;
+        }
+        else
+        {
+            posSum = vpos;
+            weigth = (depth - dposLast) / dstep;
+            break;
+        }
+    };
 
-  gl_FragColor = texture2D(
-      uSampler, mapPan(
-      (posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+    gl_FragColor = texture2D(uSampler, mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+    //gl_FragColor = grid(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
 }
-`);
+                `);
 
-    PIXI.DepthPerspectiveFilter.apply = function(filterManager, input, output) {
-      this.uniforms.dimensions = {};
-      if (input && input.sourceFrame && input.size) {
-        this.uniforms.dimensions[0] = input.sourceFrame.width;
-        this.uniforms.dimensions[1] = input.sourceFrame.height;
+        PIXI.DepthPerspectiveFilter.apply = function (filterManager, input, output)
+        {
+            this.uniforms.dimensions = {};
+            if (input && input.sourceFrame && input.size)
+            {
+                this.uniforms.dimensions[0] = input.sourceFrame.width;
+                this.uniforms.dimensions[1] = input.sourceFrame.height;
 
-        this.uniforms.frameWidth = input.size.width;
-        this.uniforms.frameHeight = input.size.height;
-      }
+                this.uniforms.frameWidth = input.size.width;
+                this.uniforms.frameHeight = input.size.height;
+            }
 
-      // draw the filter...
-      filterManager.applyFilter(this, input, output);
-    }
-
-    const app = new PIXI.Application({
-      view: document.querySelector("#canvas"),
-      width: 50,
-      height: 50
-    });
-
-    var path = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png";
-
-    var result = window.cep.fs.readFile(path);
-
-    if (result.err == 0) {
-      //alert(result.data); // displays file content
-    } else {
-      alert("fail" + result.err);
-    }
-
-    //~/AppData/Local/Temp/depth_preview.png
-    //http://192.168.1.245/3d.jpg`
-    var logo = new PIXI.Sprite.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png");
-
-    // window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
-    window.displacementFilter = PIXI.DepthPerspectiveFilter;
-
-    window.displacementFilter.uniforms.textureWidth = logo.texture.width;
-    window.displacementFilter.uniforms.textureHeight = logo.texture.height;
-    window.displacementFilter.uniforms.textureScale = 1.0;
-    window.displacementFilter.padding = 0;
-
-    // window.displacementSprite.visible = false;
-
-    window.displacementFilter.uniforms.pan = [0.0, 0.0];
-
-    window.displacementFilter.uniforms.displacementMap = PIXI.Texture.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png");
-    window.displacementFilter.uniforms.scale = 1.0;
-    window.displacementFilter.uniforms.focus = 0.5;
-    window.displacementFilter.uniforms.offset = [0.0, 0.0];
-
-    window.displacementFilter.uniforms.offset = [0.0, 0.0]
-
-    //app.stage.filterArea = app.screen;
-    app.stage.filters = [window.displacementFilter];
-    app.stage.addChild(logo);
-
-    var tiltX;
-    var tiltY;
-    var isTilting = false;
-
-    var panX;
-    var panY;
-    var isPanning = false;
-
-    window.addEventListener('mousedown', function(event) {
-      switch (event.which) {
-        case 1:
-          tiltX = app.renderer.plugins.interaction.mouse.global.x;
-          tiltY = app.renderer.plugins.interaction.mouse.global.y;
-          isTilting = true;
-          break;
-        case 2:
-          panX = app.renderer.plugins.interaction.mouse.global.x;
-          panY = app.renderer.plugins.interaction.mouse.global.y;
-          isPanning = true;
-          break;
-        case 3:
-          alert('Right Mouse button pressed.');
-          break;
-        default:
-          alert('You have a strange Mouse!');
-      }
-    });
-
-    window.addEventListener('mouseup', function(event) {
-      switch (event.which) {
-        case 1:
-          isTilting = false;
-          break;
-        case 2:
-          isPanning = false;
-          break;
-        case 3:
-          alert('Right Mouse button pressed.');
-          break;
-        default:
-          alert('You have a strange Mouse!');
-      }
-    });
-
-    window.displacementFilter.uniforms.zoom = 1.0;
-    $('#canvas').bind('mousewheel', function(e) {
-      if (e.originalEvent.wheelDelta / 120 > 0) {
-      	if (window.displacementFilter.uniforms.zoom < 30.0) {
-	        window.displacementFilter.uniforms.zoom *= 1.1;
-	        window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
-	        window.displacementFilter.uniforms.pan[0] *= 1.1;
-	        window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
-	        window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
-	        window.displacementFilter.uniforms.pan[1] *= 1.1;
-	        window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
-      	}
-      } else {
-        window.displacementFilter.uniforms.zoom /= 1.1;
-        window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
-        window.displacementFilter.uniforms.pan[0] /= 1.1;
-        window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
-        window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
-        window.displacementFilter.uniforms.pan[1] /= 1.1;
-        window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
-      }
-    });
-
-    function step(timestamp) {
-      if (logo && logo.texture && app.renderer.view.style) {
-        var endx = app.renderer.plugins.interaction.mouse.global.x;
-        var endy = app.renderer.plugins.interaction.mouse.global.y;
-
-        if (isTilting) {
-          window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / logo.texture.width * 2);
-          window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / logo.texture.height * 2);
-
-          window.displacementFilter.uniforms.offset[0] = Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 1.0), -1.0);
-          window.displacementFilter.uniforms.offset[1] = Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 1.0), -1.0);
-
-          tiltX = endx;
-          tiltY = endy;
+            // draw the filter...
+            filterManager.applyFilter(this, input, output);
         }
 
-        if (isPanning) {
-          window.displacementFilter.uniforms.pan[0] -= ((endx - panX));
-          window.displacementFilter.uniforms.pan[1] -= ((endy - panY));
+        const app = new PIXI.Application(
+            {
+                view: document.querySelector("#canvas"),
+                width: 50,
+                height: 50
+            }
+            );
 
-          panX = endx;
-          panY = endy;
+        var path = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png";
+
+        var result = window.cep.fs.readFile(path);
+
+        if (result.err == 0)
+        {
+            //alert(result.data); // displays file content
+        }
+        else
+        {
+            alert("fail" + result.err);
         }
 
-        var w = logo.texture.width;
-        var h = logo.texture.height;
-        app.renderer.view.style.width = w + "px";
-        app.renderer.view.style.height = h + "px";
-        app.renderer.resize(w, h);
-      }
-      window.requestAnimationFrame(step);
-    }
+        //~/AppData/Local/Temp/depth_preview.png
+        //http://192.168.1.245/3d.jpg`
+        var logo = new PIXI.Sprite.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png");
 
-    window.requestAnimationFrame(step);
-
-    // window.onresize = function (event){    
-    // var w = window.innerWidth;    
-    // var h = window.innerHeight;    
-    // //this part resizes the canvas but keeps ratio the same   
-    // app.renderer.view.style.width = w + "px";   
-    //   app.renderer.view.style.height = h + "px";   
-    //    //this part adjusts the ratio:    
-    //    app.renderer.resize(w,h);
-    // }
-
-    // Load the image as the default
-    csInterface.evalScript("app.activeDocument.fullName.parent.fsName.replace(/\\\\/g, '/')", function(path) {
-      var url = path + "/base_preview.png?_=" + (new Date().getTime());
-      var img = new Image();
-      img.onload = function() {
-        var baseTexture = new PIXI.BaseTexture(img);
-        var texture = new PIXI.Texture(baseTexture);
-        logo.setTexture(texture);
+        // window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
+        window.displacementFilter = PIXI.DepthPerspectiveFilter;
 
         window.displacementFilter.uniforms.textureWidth = logo.texture.width;
         window.displacementFilter.uniforms.textureHeight = logo.texture.height;
         window.displacementFilter.uniforms.textureScale = 1.0;
+        window.displacementFilter.padding = 0;
 
-      }
-      img.src = url;
-    });
+        // window.displacementSprite.visible = false;
 
-    csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function(id) {
-      register(id); // toolModalStateChanged, almost everything
-      function register(eventId) {
-        var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
-        event.data = eventId.toString();
-        var gExtensionID = csInterface.getExtensionID();
-        event.extensionId = gExtensionID;
-        csInterface.dispatchEvent(event);
+        window.displacementFilter.uniforms.pan = [0.0, 0.0];
 
-        csInterface.addEventListener(
-          "com.adobe.PhotoshopJSONCallback" + gExtensionID,
-          function(e) {
-            csInterface.evalScript(script, function(res) {
-              var u = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png?_=" + (new Date().getTime());
-              var img = new Image();
-              img.onload = function() {
+        window.displacementFilter.uniforms.displacementMap = PIXI.Texture.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png");
+        window.displacementFilter.uniforms.scale = 1.0;
+        window.displacementFilter.uniforms.focus = 0.5;
+        window.displacementFilter.uniforms.offset = [0.0, 0.0];
+
+        window.displacementFilter.uniforms.offset = [0.0, 0.0]
+
+        //app.stage.filterArea = app.screen;
+        app.stage.filters = [window.displacementFilter];
+        app.stage.addChild(logo);
+
+        var tiltX;
+        var tiltY;
+        var isTilting = false;
+
+        var panX;
+        var panY;
+        var isPanning = false;
+
+        window.addEventListener('mousedown', function (event)
+        {
+            switch (event.which)
+            {
+            case 1:
+                tiltX = app.renderer.plugins.interaction.mouse.global.x;
+                tiltY = app.renderer.plugins.interaction.mouse.global.y;
+                isTilting = true;
+                break;
+            case 2:
+                panX = app.renderer.plugins.interaction.mouse.global.x;
+                panY = app.renderer.plugins.interaction.mouse.global.y;
+                isPanning = true;
+                break;
+            case 3:
+                alert('Right Mouse button pressed.');
+                break;
+            default:
+                alert('You have a strange Mouse!');
+            }
+        }
+        );
+
+        window.addEventListener('mouseup', function (event)
+        {
+            switch (event.which)
+            {
+            case 1:
+                isTilting = false;
+                break;
+            case 2:
+                isPanning = false;
+                break;
+            case 3:
+                alert('Right Mouse button pressed.');
+                break;
+            default:
+                alert('You have a strange Mouse!');
+            }
+        }
+        );
+
+        window.displacementFilter.uniforms.zoom = 1.0;
+        $('#canvas').bind('mousewheel', function (e)
+        {
+            if (e.originalEvent.wheelDelta / 120 > 0)
+            {
+                if (window.displacementFilter.uniforms.zoom < 30.0)
+                {
+                    window.displacementFilter.uniforms.zoom *= 1.1;
+                    window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
+                    window.displacementFilter.uniforms.pan[0] *= 1.1;
+                    window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
+                    window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
+                    window.displacementFilter.uniforms.pan[1] *= 1.1;
+                    window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
+                }
+            }
+            else
+            {
+                window.displacementFilter.uniforms.zoom /= 1.1;
+                window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
+                window.displacementFilter.uniforms.pan[0] /= 1.1;
+                window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
+                window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
+                window.displacementFilter.uniforms.pan[1] /= 1.1;
+                window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
+            }
+        }
+        );
+
+        function step(timestamp)
+        {
+            if (logo && logo.texture && app.renderer.view.style)
+            {
+                var endx = app.renderer.plugins.interaction.mouse.global.x;
+                var endy = app.renderer.plugins.interaction.mouse.global.y;
+
+                if (isTilting)
+                {
+                    window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / logo.texture.width * 2);
+                    window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / logo.texture.height * 2);
+
+                    window.displacementFilter.uniforms.offset[0] = Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 1.0), -1.0);
+                    window.displacementFilter.uniforms.offset[1] = Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 1.0), -1.0);
+
+                    tiltX = endx;
+                    tiltY = endy;
+                }
+
+                if (isPanning)
+                {
+                    window.displacementFilter.uniforms.pan[0] -= ((endx - panX));
+                    window.displacementFilter.uniforms.pan[1] -= ((endy - panY));
+
+                    panX = endx;
+                    panY = endy;
+                }
+
+                var w = logo.texture.width;
+                var h = logo.texture.height;
+                app.renderer.view.style.width = w + "px";
+                app.renderer.view.style.height = h + "px";
+                app.renderer.resize(w, h);
+            }
+            window.requestAnimationFrame(step);
+        }
+
+        window.requestAnimationFrame(step);
+
+        // window.onresize = function (event){
+        // var w = window.innerWidth;
+        // var h = window.innerHeight;
+        // //this part resizes the canvas but keeps ratio the same
+        // app.renderer.view.style.width = w + "px";
+        //   app.renderer.view.style.height = h + "px";
+        //    //this part adjusts the ratio:
+        //    app.renderer.resize(w,h);
+        // }
+
+        // Load the image as the default
+        csInterface.evalScript("app.activeDocument.fullName.parent.fsName.replace(/\\\\/g, '/')", function (path)
+        {
+            var url = path + "/base_preview.png?_=" + (new Date().getTime());
+            var img = new Image();
+            img.onload = function ()
+            {
                 var baseTexture = new PIXI.BaseTexture(img);
                 var texture = new PIXI.Texture(baseTexture);
-                window.displacementFilter.uniforms.displacementMap = texture;
-              }
-              img.src = u;
-            });
-          }
-        );
-      }
-    });
+                logo.setTexture(texture);
 
-  }
-  init();
-}());
+                window.displacementFilter.uniforms.textureWidth = logo.texture.width;
+                window.displacementFilter.uniforms.textureHeight = logo.texture.height;
+                window.displacementFilter.uniforms.textureScale = 1.0;
+
+            }
+            img.src = url;
+        }
+        );
+
+        csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (id)
+        {
+            register(id); // toolModalStateChanged, almost everything
+            function register(eventId)
+            {
+                var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
+                event.data = eventId.toString();
+                var gExtensionID = csInterface.getExtensionID();
+                event.extensionId = gExtensionID;
+                csInterface.dispatchEvent(event);
+
+                csInterface.addEventListener(
+                    "com.adobe.PhotoshopJSONCallback" + gExtensionID,
+                    function (e)
+                {
+                    csInterface.evalScript(script, function (res)
+                    {
+                        var u = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png?_=" + (new Date().getTime());
+                        var img = new Image();
+                        img.onload = function ()
+                        {
+                            var baseTexture = new PIXI.BaseTexture(img);
+                            var texture = new PIXI.Texture(baseTexture);
+                            window.displacementFilter.uniforms.displacementMap = texture;
+                        }
+                        img.src = u;
+                    }
+                    );
+                }
+                );
+            }
+        }
+        );
+
+    }
+    init();
+}
+    ());
