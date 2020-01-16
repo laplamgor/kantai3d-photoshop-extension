@@ -90,16 +90,46 @@ vec2 mapCoord2(vec2 coord)
 
 vec4 grid(vec2 coord)
 {
-    if (mod(coord[0], 0.08) < 0.002 || mod(coord[1], 0.08) < 0.002)
-    {
-        return vec4(1.0, 1.0, 1.0, 1.0);
+    float lineW = 1.0 / frameWidth / zoom;
+    float spaceW = lineW * 8.0;
+    float spaceW2 = lineW * 32.0;
+    float lineH = 1.0 / frameHeight / zoom;
+    float spaceH = lineH * 8.0;
+    float spaceH2 = lineH * 32.0;
+
+    if (texture2D(uSampler, coord)[3] < 1.0) {
+        return vec4(0.0,0.0,0.0,0.0);
     }
-    if (mod(coord[0], 0.008) < 0.001 || mod(coord[1], 0.008) < 0.001)
+
+    if (mod(coord[0], spaceW2) < lineW || mod(coord[1], spaceH2) < lineH)
     {
-        return vec4(0.5, 0.5, 0.5, 0.5);
+        return vec4(0.75,0.75,0.75,0.75);
     }
-    return vec4(0.0, 0.0, 0.0, 1.0);
+    if (mod(coord[0], spaceW) < lineW || mod(coord[1], spaceH) < lineH)
+    {
+        return vec4(0.5, 0.5, 0.5, 0.75);
+    }
+    return vec4(texture2D(displacementMap, mapCoord2(coord)).r);
 }
+
+vec4 noraml(vec2 coord)
+{
+    float lineW = 1.0 / frameWidth / zoom / 2.0;
+    float lineH = 1.0 / frameHeight / zoom / 2.0;
+
+
+    float leftD = texture2D(displacementMap, mapCoord2(coord - vec2(lineW, 0.0))).r;
+    float rightD = texture2D(displacementMap, mapCoord2(coord + vec2(lineW, 0.0))).r;
+    float upD = texture2D(displacementMap, mapCoord2(coord - vec2(0.0, lineH))).r;
+    float downD = texture2D(displacementMap, mapCoord2(coord + vec2(0.0, lineH))).r;
+
+    if (texture2D(uSampler, coord)[3] < 1.0) {
+        return vec4(0.0,0.0,0.0,0.0);
+    }
+
+    return vec4((leftD-rightD) * 100.0 * zoom + 0.5, (upD-downD) * -100.0 * zoom + 0.5, 1.0, 1.0);
+}
+
 
 const float compression = 1.0;
 const float dmin = 0.0;
@@ -158,7 +188,7 @@ void main(void)
     };
 
     gl_FragColor = texture2D(uSampler, mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
-    //gl_FragColor = grid(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+    gl_FragColor = noraml(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
 }
                 `);
 
