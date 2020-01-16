@@ -19,7 +19,6 @@ if (app.documents.length != 0) {
   var opts, file;
   opts = new ExportOptionsSaveForWeb();
   opts.format = SaveDocumentType.PNG;
-  opts.PNG8 = false;
   opts.quality = 100;
 
   pngFile = new File("` + csInterface.getSystemPath(SystemPath.EXTENSION) + `" + "/depth_preview.png");
@@ -86,6 +85,11 @@ const float compression = 1.0;
 const float dmin = 0.0;
 const float dmax = 1.0;
 
+// sqrt(2)
+#define MAXOFFSETLENGTH 1.41421356
+// 10 * 1.1
+#define MAXZOOM 11.0
+
 #define MAXSTEPS 600.0
 float steps = max(MAXSTEPS * length(offset * zoom), 30.0);
 
@@ -111,7 +115,7 @@ void main(void) {
   float dpos;
   float dposLast;
 
-  for (float i = 0.0; i < MAXSTEPS; ++i) {
+  for (float i = 0.0; i < MAXSTEPS * MAXOFFSETLENGTH * MAXZOOM; ++i) {
     vec2 vpos = pos + vector[1] - i * vstep;
     dpos = 1.0 - i * dstep;
 
@@ -238,13 +242,15 @@ void main(void) {
     window.displacementFilter.uniforms.zoom = 1.0;
     $('#canvas').bind('mousewheel', function(e) {
       if (e.originalEvent.wheelDelta / 120 > 0) {
-        window.displacementFilter.uniforms.zoom *= 1.1;
-        window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
-        window.displacementFilter.uniforms.pan[0] *= 1.1;
-        window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
-        window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
-        window.displacementFilter.uniforms.pan[1] *= 1.1;
-        window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
+      	if (window.displacementFilter.uniforms.zoom < 30.0) {
+	        window.displacementFilter.uniforms.zoom *= 1.1;
+	        window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
+	        window.displacementFilter.uniforms.pan[0] *= 1.1;
+	        window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
+	        window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
+	        window.displacementFilter.uniforms.pan[1] *= 1.1;
+	        window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
+      	}
       } else {
         window.displacementFilter.uniforms.zoom /= 1.1;
         window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
@@ -265,8 +271,8 @@ void main(void) {
           window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / logo.texture.width * 2);
           window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / logo.texture.height * 2);
 
-          window.displacementFilter.uniforms.offset[0] = Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 0.5), -0.5);
-          window.displacementFilter.uniforms.offset[1] = Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 0.5), -0.5);
+          window.displacementFilter.uniforms.offset[0] = Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 1.0), -1.0);
+          window.displacementFilter.uniforms.offset[1] = Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 1.0), -1.0);
 
           tiltX = endx;
           tiltY = endy;
