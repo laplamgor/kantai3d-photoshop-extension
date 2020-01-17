@@ -54,6 +54,7 @@ precision mediump float;
 uniform vec2 offset;
 uniform vec2 pan;
 uniform float zoom;
+uniform int displayMode;
 
 uniform sampler2D uSampler;
 uniform sampler2D displacementMap;
@@ -187,8 +188,14 @@ void main(void)
         }
     };
 
-    gl_FragColor = texture2D(uSampler, mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
-    gl_FragColor = noraml(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+    if (displayMode == 0) {
+        gl_FragColor = texture2D(uSampler, mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+    } else if (displayMode == 1) {
+        gl_FragColor = noraml(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+    } else {
+        gl_FragColor = grid(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+    }
+
 }
                 `);
 
@@ -250,7 +257,7 @@ void main(void)
         window.displacementFilter.uniforms.focus = 0.5;
         window.displacementFilter.uniforms.offset = [0.0, 0.0];
 
-        window.displacementFilter.uniforms.offset = [0.0, 0.0]
+        window.displacementFilter.uniforms.displayMode = 0;
 
         //app.stage.filterArea = app.screen;
         app.stage.filters = [window.displacementFilter];
@@ -279,7 +286,8 @@ void main(void)
                 isPanning = true;
                 break;
             case 3:
-                alert('Right Mouse button pressed.');
+                window.displacementFilter.uniforms.displayMode++;
+                window.displacementFilter.uniforms.displayMode %= 3;
                 break;
             default:
                 alert('You have a strange Mouse!');
@@ -298,7 +306,6 @@ void main(void)
                 isPanning = false;
                 break;
             case 3:
-                alert('Right Mouse button pressed.');
                 break;
             default:
                 alert('You have a strange Mouse!');
