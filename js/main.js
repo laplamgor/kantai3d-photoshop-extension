@@ -113,24 +113,28 @@ vec4 grid(vec2 coord)
     return vec4(texture2D(displacementMap, mapCoord2(coord)).r);
 }
 
-vec4 noraml(vec2 coord)
+vec4 normal(vec2 coord)
 {
-    float lineW = 1.0 / frameWidth / zoom / 2.0;
-    float lineH = 1.0 / frameHeight / zoom / 2.0;
+    vec2 lineW = vec2(0.5 / frameWidth / zoom, 0.0);
+    vec2 lineH = vec2(0.0, 0.5 / frameHeight / zoom);
 
 
-    float leftD = texture2D(displacementMap, mapCoord2(coord - vec2(lineW, 0.0))).r;
-    float rightD = texture2D(displacementMap, mapCoord2(coord + vec2(lineW, 0.0))).r;
-    float upD = texture2D(displacementMap, mapCoord2(coord - vec2(0.0, lineH))).r;
-    float downD = texture2D(displacementMap, mapCoord2(coord + vec2(0.0, lineH))).r;
+    float leftD = texture2D(displacementMap, mapCoord2(coord - lineW)).r;
+    float rightD = texture2D(displacementMap, mapCoord2(coord + lineW)).r;
+    float upD = texture2D(displacementMap, mapCoord2(coord - lineH)).r;
+    float downD = texture2D(displacementMap, mapCoord2(coord + lineH)).r;
 
     if (texture2D(uSampler, coord)[3] < 1.0) {
-        return vec4(0.0,0.0,0.0,0.0);
+        return vec4(0.0);
     }
 
-    return vec4((leftD-rightD) * 100.0 * zoom + 0.5, (upD-downD) * -100.0 * zoom + 0.5, 1.0, 1.0);
+    return vec4(0.5, 0.5, 1.0, 1.0) + vec4(leftD-rightD, upD-downD, 0.0, 0.0) * 100.0 * zoom;
 }
 
+vec4 normalMixed(vec2 coord)
+{
+    return texture2D(uSampler, coord)  - vec4(0.5,0.5,1.0,1.0) + normal(coord);
+}
 
 const float compression = 1.0;
 const float dmin = 0.0;
@@ -142,7 +146,7 @@ const float dmax = 1.0;
 #define MAXZOOM 11.0
 
 #define MAXSTEPS 600.0
-float steps = max(MAXSTEPS *length(offset *zoom), 30.0);
+float steps = max(MAXSTEPS *length(offset * zoom), 30.0);
 
 void main(void)
 {
@@ -188,12 +192,13 @@ void main(void)
         }
     };
 
+    vec2 coord = mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum);
     if (displayMode == 0) {
-        gl_FragColor = texture2D(uSampler, mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+        gl_FragColor = texture2D(uSampler, coord);
     } else if (displayMode == 1) {
-        gl_FragColor = noraml(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+        gl_FragColor = normalMixed(coord);
     } else {
-        gl_FragColor = grid(mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum));
+        gl_FragColor = grid(coord);
     }
 
 }
