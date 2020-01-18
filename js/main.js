@@ -257,7 +257,8 @@ void main(void)
 
         window.displacementFilter.uniforms.pan = [0.0, 0.0];
 
-        window.displacementFilter.uniforms.displacementMap = PIXI.Texture.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png");
+        window.displacementFilter.uniforms.displacementMap = PIXI.Texture.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION)
+                 + "/depth_preview.png");
         window.displacementFilter.uniforms.scale = 1.0;
         window.displacementFilter.uniforms.focus = 0.5;
         window.displacementFilter.uniforms.offset = [0.0, 0.0];
@@ -359,8 +360,10 @@ void main(void)
                     window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / logo.texture.width * 2);
                     window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / logo.texture.height * 2);
 
-                    window.displacementFilter.uniforms.offset[0] = Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 1.0), -1.0);
-                    window.displacementFilter.uniforms.offset[1] = Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 1.0), -1.0);
+                    window.displacementFilter.uniforms.offset[0] =
+                        Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 1.0), -1.0);
+                    window.displacementFilter.uniforms.offset[1] =
+                        Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 1.0), -1.0);
 
                     tiltX = endx;
                     tiltY = endy;
@@ -419,36 +422,62 @@ void main(void)
         csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (id)
         {
             register(id); // toolModalStateChanged, almost everything
-            function register(eventId)
-            {
-                var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
-                event.data = eventId.toString();
-                var gExtensionID = csInterface.getExtensionID();
-                event.extensionId = gExtensionID;
-                csInterface.dispatchEvent(event);
-
-                csInterface.addEventListener(
-                    "com.adobe.PhotoshopJSONCallback" + gExtensionID,
-                    function (e)
-                {
-                    csInterface.evalScript(script, function (res)
-                    {
-                        var u = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png?_=" + (new Date().getTime());
-                        var img = new Image();
-                        img.onload = function ()
-                        {
-                            var baseTexture = new PIXI.BaseTexture(img);
-                            var texture = new PIXI.Texture(baseTexture);
-                            window.displacementFilter.uniforms.displacementMap = texture;
-                        }
-                        img.src = u;
-                    }
-                    );
-                }
-                );
-            }
+            register(1936483188); // 'slct' (e.g. change history state)
+            register(1399355168); // 'Shw' (show layer)
+            register(1214521376); // 'Hd  ' (hide layer)
         }
         );
+
+        function register(eventId)
+        {
+            var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
+            event.data = eventId.toString();
+            var gExtensionID = csInterface.getExtensionID();
+            event.extensionId = gExtensionID;
+            csInterface.dispatchEvent(event);
+
+            csInterface.addEventListener("com.adobe.PhotoshopJSONCallback" + gExtensionID, eventCallback);
+        }
+
+        function eventCallback(csEvent)
+        {
+            // alert(csEvent.data);
+            // try
+            // {
+            //     if (typeof csEvent.data === "string")
+            //     {
+            //         var eventData = csEvent.data.replace("ver1,{", "{");
+            //         var eventDataObject = JSON.parse(eventData);
+            //         csEvent.data = eventDataObject;
+            //     }
+            // }
+            // catch (e)
+            // {
+            //     console.log("PhotoshopCallbackUnique catch: " + e);
+            // }
+
+            // if (csEvent.data && csEvent.data.eventID == 1936483188 && csEvent.data.eventData.null._ref == 'historyState') {
+            //     alert(csEvent.data.eventID);
+            // }
+            updatePreview();
+        }
+
+        function updatePreview()
+        {
+            csInterface.evalScript(script, function (res)
+            {
+                var u = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png?_=" + (new Date().getTime());
+                var img = new Image();
+                img.onload = function ()
+                {
+                    var baseTexture = new PIXI.BaseTexture(img);
+                    var texture = new PIXI.Texture(baseTexture);
+                    window.displacementFilter.uniforms.displacementMap = texture;
+                }
+                img.src = u;
+            }
+            );
+        }
 
     }
     init();
