@@ -27,3 +27,32 @@ html, body {
     margin:3px 0px 3px 0px;
 }
 
+#app::-webkit-scrollbar {
+  display: block;
+}
+body::-webkit-scrollbar {
+  width: 0px;
+}
+::-webkit-scrollbar {
+  background-color: var(--color-scrollbar);
+  width: var(--width-scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  width: var(--width-scrollbar-track);
+  background: var(--color-scrollbar-thumb);
+  border-radius: var(--radius-scrollbar-thumb);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-resizer {
+  display: none;
+  width: 0px;
+  background-color: transparent;
+}
+::-webkit-scrollbar-button {
+  height: 0px;
+}
+::-webkit-scrollbar-corner {
+  display: none;
+}
