@@ -93,9 +93,15 @@ vec2 mapCoord2(vec2 coord)
 
 vec4 textureDiffuse(vec2 coord) {
     vec2 c = coord;
-    //c = c + pan / canvasSize * textureScale ;
 
-    return texture2D(uSampler, c);
+    if (coord[0] <= 0.0 || coord[0] >= 1.0 || coord[1] <= 0.0 || coord[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
+    {
+        return vec4(1.0, 0.0, 0.0, 1.0);
+    }
+    else
+    {
+        return texture2D(uSampler, c);
+    }
 }
 
 vec4 textureDepth(vec2 coord) {
@@ -107,6 +113,10 @@ vec4 textureDepth(vec2 coord) {
     c = c + vec2(max(pan[0], 0.0), max(pan[1], 0.0)) /  tex * textureScale ;
 
     c = c / zoom;
+    if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
+    {
+        return vec4(0.0, 0.0, 0.0, 0.0);
+    }
     return texture2D(displacementMap, c);
 }
 
