@@ -171,9 +171,9 @@ float steps = max(MAXSTEPS *length(offset * zoom), 30.0);
 
 void main(void)
 {
-    float aspect = dimensions.x / dimensions.y;
-    vec2 scale2 =
-        vec2(scale * min(1.0, 1.0 / aspect), scale * min(1.0, aspect)) * vec2(1, -1);
+    vec2 scale2 = scale * vec2(textureHeight / frameWidth , 
+                       textureWidth / frameHeight ) 
+                * vec2(1, -1);
     mat2 baseVector =
         mat2(vec2((0.5 - focus) * (offset * zoom) - (offset * zoom) / 2.0) * scale2,
              vec2((0.5 - focus) * (offset * zoom) + (offset * zoom) / 2.0) * scale2);
