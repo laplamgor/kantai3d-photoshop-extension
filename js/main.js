@@ -60,10 +60,12 @@ uniform sampler2D uSampler;
 uniform sampler2D displacementMap;
 
 uniform float textureScale;
+uniform vec2 textureSize;
 uniform float textureWidth;
 uniform float textureHeight;
 uniform float frameWidth;
 uniform float frameHeight;
+uniform vec2 canvasSize;
 
 uniform vec4 filterArea;
 uniform vec4 filterClamp;
@@ -87,6 +89,25 @@ vec2 mapCoord2(vec2 coord)
 {
     return vec2(coord[0] * frameWidth / textureWidth / textureScale,
                 coord[1] * frameHeight / textureHeight / textureScale);
+}
+
+vec4 textureDiffuse(vec2 coord) {
+    vec2 c = coord;
+    //c = c + pan / canvasSize * textureScale ;
+
+    return texture2D(uSampler, c);
+}
+
+vec4 textureDepth(vec2 coord) {
+    vec2 c = coord;
+    vec2 frame = vec2(frameWidth, frameHeight);
+    vec2 tex = vec2(textureWidth, textureHeight);
+
+    c = c  * frame  /  tex * textureScale ;
+    c = c + vec2(max(pan[0], 0.0), max(pan[1], 0.0)) /  tex * textureScale ;
+
+    c = c / zoom;
+    return texture2D(displacementMap, c);
 }
 
 vec4 grid(vec2 coord)
@@ -133,7 +154,7 @@ vec4 normal(vec2 coord)
 
 vec4 normalMixed(vec2 coord)
 {
-    return texture2D(uSampler, coord)  - vec4(0.5,0.5,1.0,1.0) + normal(coord);
+    return textureDiffuse(coord)  - vec4(0.5,0.5,1.0,1.0) + normal(coord);
 }
 
 const float compression = 1.0;
@@ -175,8 +196,8 @@ void main(void)
     {
         vec2 vpos = pos + vector[1] - i * vstep;
         dpos = 1.0 - i * dstep;
+        float depth = textureDepth(vpos).r;
 
-        float depth = texture2D(displacementMap, mapPan(mapCoord2(vpos))).r;
         depth = clamp(depth, dmin, dmax);
 
         if (dpos > depth)
@@ -191,10 +212,9 @@ void main(void)
             break;
         }
     };
-
-    vec2 coord = mapPan((posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum);
+    vec2 coord = (posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum;
     if (displayMode == 0) {
-        gl_FragColor = texture2D(uSampler, coord);
+        gl_FragColor = textureDiffuse(coord);
     } else if (displayMode == 1) {
         gl_FragColor = normalMixed(coord);
     } else {
@@ -211,10 +231,22 @@ void main(void)
             {
                 this.uniforms.dimensions[0] = input.sourceFrame.width;
                 this.uniforms.dimensions[1] = input.sourceFrame.height;
+                console.log(window.displacementFilter.uniforms.offset[1]);
 
                 this.uniforms.frameWidth = input.size.width;
                 this.uniforms.frameHeight = input.size.height;
+
+                logo.position﻿.x = -this.uniforms.pan[0];
+                logo.position﻿.y = -this.uniforms.pan[1];
             }
+
+            this.uniforms.canvasSize = {};
+            this.uniforms.canvasSize[0] = app.renderer.width;
+            this.uniforms.canvasSize[1] = app.renderer.height;
+
+
+            logo.scale.set(this.uniforms.zoom);
+
 
             // draw the filter...
             filterManager.applyFilter(this, input, output);
@@ -338,12 +370,8 @@ void main(void)
             else
             {
                 window.displacementFilter.uniforms.zoom /= 1.1;
-                window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
-                window.displacementFilter.uniforms.pan[0] /= 1.1;
-                window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
-                window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
-                window.displacementFilter.uniforms.pan[1] /= 1.1;
-                window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
+                window.displacementFilter.uniforms.pan[0] = (window.displacementFilter.uniforms.pan[0] + app.renderer.plugins.interaction.mouse.global.x) / 1.1 - app.renderer.plugins.interaction.mouse.global.x;
+                window.displacementFilter.uniforms.pan[1] = (window.displacementFilter.uniforms.pan[1] + app.renderer.plugins.interaction.mouse.global.y) / 1.1 - app.renderer.plugins.interaction.mouse.global.y;
             }
         }
         );
@@ -378,11 +406,6 @@ void main(void)
                     panY = endy;
                 }
 
-                var w = logo.texture.width;
-                var h = logo.texture.height;
-                app.renderer.view.style.width = w + "px";
-                app.renderer.view.style.height = h + "px";
-                app.renderer.resize(w, h);
             }
             window.requestAnimationFrame(step);
         }
@@ -393,11 +416,34 @@ void main(void)
         // var w = window.innerWidth;
         // var h = window.innerHeight;
         // //this part resizes the canvas but keeps ratio the same
-        // app.renderer.view.style.width = w + "px";
+        //     app.renderer.view.style.width = w + "px";
         //   app.renderer.view.style.height = h + "px";
         //    //this part adjusts the ratio:
         //    app.renderer.resize(w,h);
+
+
+        //    alert(w);
         // }
+
+        // Listen for window resize events
+        window.addEventListener('resize', resize);
+
+        // Resize function window
+        function resize()
+        {
+            // Resize the renderer
+            var c = $("#canvas");
+            c.prop('width', window.innerWidth);
+            c.prop('height', window.innerHeight);
+            app.renderer.resize(window.innerWidth, window.innerHeight);
+            //alert(window.innerWidth);
+            // You can use the 'screen' property as the renderer visible
+            // area, this is more useful than view.width/height because
+            // it handles resolution
+            //rect.position.set(app.screen.width, app.screen.height);
+        }
+
+        resize();
 
         // Load the image as the default
         csInterface.evalScript("app.activeDocument.fullName.parent.fsName.replace(/\\\\/g, '/')", function (path)
@@ -412,6 +458,9 @@ void main(void)
 
                 window.displacementFilter.uniforms.textureWidth = logo.texture.width;
                 window.displacementFilter.uniforms.textureHeight = logo.texture.height;
+
+                window.displacementFilter.uniforms.textureSize = [logo.texture.width, logo.texture.height];
+
                 window.displacementFilter.uniforms.textureScale = 1.0;
 
             }
