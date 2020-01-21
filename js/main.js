@@ -97,7 +97,7 @@ vec4 textureDiffuse(vec2 coord)
 
     if (coord[0] <= 0.0 || coord[0] >= 1.0 || coord[1] <= 0.0 || coord[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
     {
-        return vec4(1.0, 0.0, 0.0, 1.0);
+        return vec4(0.5, 0.5, 1.0, 0.0);
     }
     else
     {
@@ -149,18 +149,18 @@ vec4 grid(vec2 coord)
 
 vec4 normal(vec2 coord)
 {
-    vec2 lineW = vec2(0.5 / frameWidth / zoom, 0.0);
-    vec2 lineH = vec2(0.0, 0.5 / frameHeight / zoom);
+    vec2 lineW = vec2(0.5 / frameWidth, 0.0);
+    vec2 lineH = vec2(0.0, 0.5 / frameHeight);
 
 
-    float leftD = texture2D(displacementMap, mapCoord2(coord - lineW)).r;
-    float rightD = texture2D(displacementMap, mapCoord2(coord + lineW)).r;
-    float upD = texture2D(displacementMap, mapCoord2(coord - lineH)).r;
-    float downD = texture2D(displacementMap, mapCoord2(coord + lineH)).r;
+    float leftD = textureDepth(coord - lineW).r;
+    float rightD = textureDepth(coord + lineW).r;
+    float upD = textureDepth(coord - lineH).r;
+    float downD = textureDepth(coord + lineH).r;
 
-    if (texture2D(uSampler, coord)[3] < 1.0)
+    if (textureDiffuse(coord)[3] < 1.0)
     {
-        return vec4(0.0);
+        return vec4(0.5,0.5,1.0,1.0);
     }
 
     return vec4(0.5, 0.5, 1.0, 1.0) + vec4(leftD - rightD, upD - downD, 0.0, 0.0) * 100.0 * zoom;
@@ -233,11 +233,11 @@ void main(void)
     }
     else if (displayMode == 1)
     {
-        gl_FragColor = normalMixed(coord);
+        gl_FragColor = normal(coord);
     }
     else
     {
-        gl_FragColor = grid(coord);
+        gl_FragColor = normalMixed(coord);
     }
 
 }
