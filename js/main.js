@@ -95,7 +95,14 @@ vec4 textureDiffuse(vec2 coord)
 {
     vec2 c = coord;
 
-    if (coord[0] <= 0.0 || coord[0] >= 1.0 || coord[1] <= 0.0 || coord[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
+    c -= 0.5;
+    c = c * canvasSize  / (textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) ));
+    c += pan / canvasSize;
+    c /= zoom;
+    c += 0.5;
+
+
+    if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
     {
         return vec4(0.5, 0.5, 1.0, 0.0);
     }
@@ -108,17 +115,24 @@ vec4 textureDiffuse(vec2 coord)
 vec4 textureDepth(vec2 coord)
 {
     vec2 c = coord;
-    vec2 frame = vec2(frameWidth, frameHeight);
-    vec2 tex = vec2(textureWidth, textureHeight);
 
-    c = c  * frame  /  tex * textureScale ;
-    c = c + vec2(max(pan[0], 0.0), max(pan[1], 0.0)) /  tex * textureScale ;
+    c -= 0.5;
+    c = c * canvasSize  / (textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) ));
+    c += pan / canvasSize;
+    c /= zoom;
+    c += 0.5;
 
-    c = c / zoom;
-    if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
-    {
-        return vec4(0.0, 0.0, 0.0, 0.0);
-    }
+
+    // vec2 frame = vec2(frameWidth, frameHeight);
+    // vec2 tex = vec2(textureWidth, textureHeight);
+
+    // c = c  * frame  /  tex * textureScale ;
+    // c = c + vec2(max(pan[0], 0.0), max(pan[1], 0.0)) /  tex * textureScale ;
+
+    // if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
+    // {
+    //     return vec4(0.0, 0.0, 0.0, 0.0);
+    // }
     return texture2D(displacementMap, c);
 }
 
@@ -158,10 +172,10 @@ vec4 normal(vec2 coord)
     float upD = textureDepth(coord - lineH).r;
     float downD = textureDepth(coord + lineH).r;
 
-    if (textureDiffuse(coord)[3] < 1.0)
-    {
-        return vec4(0.5,0.5,1.0,1.0);
-    }
+    // if (textureDiffuse(coord)[3] < 1.0)
+    // {
+    //     return vec4(0.5,0.5,1.0,1.0);
+    // }
 
     return vec4(0.5, 0.5, 1.0, 1.0) + vec4(leftD - rightD, upD - downD, 0.0, 0.0) * 100.0 * zoom;
 }
@@ -185,6 +199,7 @@ float steps = max(MAXSTEPS *length(offset *zoom), 30.0);
 
 void main(void)
 {
+//gl_FragColor = vec4(1.0,1.0,0.0,1.0);return;
     vec2 scale2 = scale * vec2(textureHeight / frameWidth,
                                textureWidth / frameHeight )
                   * vec2(1, -1);
@@ -255,8 +270,8 @@ void main(void)
                 this.uniforms.frameWidth = input.size.width;
                 this.uniforms.frameHeight = input.size.height;
 
-                logo.position﻿.x = -this.uniforms.pan[0];
-                logo.position﻿.y = -this.uniforms.pan[1];
+   //             logo.position﻿.x = -this.uniforms.pan[0];
+   //             logo.position﻿.y = -this.uniforms.pan[1];
             }
 
             this.uniforms.canvasSize = {};
@@ -264,7 +279,7 @@ void main(void)
             this.uniforms.canvasSize[1] = app.renderer.height;
 
 
-            logo.scale.set(this.uniforms.zoom);
+//            logo.scale.set(this.uniforms.zoom);
 
 
             // draw the filter...
@@ -298,7 +313,7 @@ void main(void)
 
         // window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
         window.displacementFilter = PIXI.DepthPerspectiveFilter;
-
+displacementFilter.filterArea = app.renderer.screen;
         window.displacementFilter.uniforms.textureWidth = logo.texture.width;
         window.displacementFilter.uniforms.textureHeight = logo.texture.height;
         window.displacementFilter.uniforms.textureScale = 1.0;
@@ -460,6 +475,11 @@ void main(void)
             // area, this is more useful than view.width/height because
             // it handles resolution
             //rect.position.set(app.screen.width, app.screen.height);
+
+
+            
+                logo.width = app.renderer.screen.width;
+                logo.height = app.renderer.screen.height;
         }
 
         resize();
