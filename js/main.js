@@ -267,21 +267,14 @@ void main(void)
             {
                 this.uniforms.dimensions[0] = input.sourceFrame.width;
                 this.uniforms.dimensions[1] = input.sourceFrame.height;
-                console.log(window.displacementFilter.uniforms.offset[1]);
 
                 this.uniforms.frameWidth = input.size.width;
                 this.uniforms.frameHeight = input.size.height;
-
-                //             logo.position﻿.x = -this.uniforms.pan[0];
-                //             logo.position﻿.y = -this.uniforms.pan[1];
             }
 
             this.uniforms.canvasSize = {};
             this.uniforms.canvasSize[0] = app.renderer.width;
             this.uniforms.canvasSize[1] = app.renderer.height;
-
-            //            logo.scale.set(this.uniforms.zoom);
-
 
             // draw the filter...
             filterManager.applyFilter(this, input, output);
@@ -314,13 +307,11 @@ void main(void)
 
         // window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
         window.displacementFilter = PIXI.DepthPerspectiveFilter;
-displacementFilter.filterArea = app.renderer.screen;
         window.displacementFilter.uniforms.textureWidth = logo.texture.width;
         window.displacementFilter.uniforms.textureHeight = logo.texture.height;
         window.displacementFilter.uniforms.textureScale = 1.0;
         window.displacementFilter.padding = 0;
 
-        // window.displacementSprite.visible = false;
 
         window.displacementFilter.uniforms.pan = [0.0, 0.0];
 
@@ -394,9 +385,6 @@ displacementFilter.filterArea = app.renderer.screen;
                 if (window.displacementFilter.uniforms.zoom < 30.0)
                 {
                     window.displacementFilter.uniforms.zoom *= 1.1;
-
-                    // c -= 0.5;
-                    var ssc = Math.min(app.renderer.width / logo.texture.width, app.renderer.height / logo.texture.height);
 
                     var mx = app.renderer.plugins.interaction.mouse.global.x - app.renderer.width / 2.0;
                     window.displacementFilter.uniforms.pan[0] += mx;
