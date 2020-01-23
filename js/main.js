@@ -94,12 +94,15 @@ vec2 mapCoord2(vec2 coord)
 vec4 textureDiffuse(vec2 coord)
 {
     vec2 c = coord;
+    vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
 
-    c -= 0.5;
-    c = c * canvasSize  / (textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) ));
-    c += pan / canvasSize;
+    c -= 0.5;                   // Normalize
+    c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
+    c /= scale;
+
     c /= zoom;
-    c += 0.5;
+    c += 0.5;                   // Unnormalize
+
 
 
     if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
@@ -116,18 +119,15 @@ vec4 textureDepth(vec2 coord)
 {
     vec2 c = coord;
 
-    c -= 0.5;
-    c = c * canvasSize  / (textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) ));
-    c += pan / canvasSize;
+    vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
+
+    c -= 0.5;                   // Normalize
+    c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
+    c /= scale;
+
     c /= zoom;
-    c += 0.5;
+    c += 0.5;                   // Unnormalize
 
-
-    // vec2 frame = vec2(frameWidth, frameHeight);
-    // vec2 tex = vec2(textureWidth, textureHeight);
-
-    // c = c  * frame  /  tex * textureScale ;
-    // c = c + vec2(max(pan[0], 0.0), max(pan[1], 0.0)) /  tex * textureScale ;
 
     // if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
     // {
@@ -199,7 +199,6 @@ float steps = max(MAXSTEPS *length(offset *zoom), 30.0);
 
 void main(void)
 {
-//gl_FragColor = vec4(1.0,1.0,0.0,1.0);return;
     vec2 scale2 = scale * vec2(textureHeight / frameWidth,
                                textureWidth / frameHeight )
                   * vec2(1, -1);
@@ -270,16 +269,15 @@ void main(void)
                 this.uniforms.frameWidth = input.size.width;
                 this.uniforms.frameHeight = input.size.height;
 
-   //             logo.position﻿.x = -this.uniforms.pan[0];
-   //             logo.position﻿.y = -this.uniforms.pan[1];
+                //             logo.position﻿.x = -this.uniforms.pan[0];
+                //             logo.position﻿.y = -this.uniforms.pan[1];
             }
 
             this.uniforms.canvasSize = {};
             this.uniforms.canvasSize[0] = app.renderer.width;
             this.uniforms.canvasSize[1] = app.renderer.height;
 
-
-//            logo.scale.set(this.uniforms.zoom);
+            //            logo.scale.set(this.uniforms.zoom);
 
 
             // draw the filter...
@@ -393,19 +391,35 @@ displacementFilter.filterArea = app.renderer.screen;
                 if (window.displacementFilter.uniforms.zoom < 30.0)
                 {
                     window.displacementFilter.uniforms.zoom *= 1.1;
-                    window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
+
+                    // c -= 0.5;
+                    var ssc = Math.min(app.renderer.width / logo.texture.width, app.renderer.height / logo.texture.height);
+
+                    var mx = app.renderer.plugins.interaction.mouse.global.x - app.renderer.width / 2.0;
+                    window.displacementFilter.uniforms.pan[0] += mx;
                     window.displacementFilter.uniforms.pan[0] *= 1.1;
-                    window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
-                    window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
+                    window.displacementFilter.uniforms.pan[0] -= mx;
+
+                    var my = app.renderer.plugins.interaction.mouse.global.y - app.renderer.height / 2.0;
+                    window.displacementFilter.uniforms.pan[1] += my;
                     window.displacementFilter.uniforms.pan[1] *= 1.1;
-                    window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
+                    window.displacementFilter.uniforms.pan[1] -= my;
+
                 }
             }
             else
             {
                 window.displacementFilter.uniforms.zoom /= 1.1;
-                window.displacementFilter.uniforms.pan[0] = (window.displacementFilter.uniforms.pan[0] + app.renderer.plugins.interaction.mouse.global.x) / 1.1 - app.renderer.plugins.interaction.mouse.global.x;
-                window.displacementFilter.uniforms.pan[1] = (window.displacementFilter.uniforms.pan[1] + app.renderer.plugins.interaction.mouse.global.y) / 1.1 - app.renderer.plugins.interaction.mouse.global.y;
+
+                var mx = app.renderer.plugins.interaction.mouse.global.x - app.renderer.width / 2.0;
+                window.displacementFilter.uniforms.pan[0] += mx;
+                window.displacementFilter.uniforms.pan[0] /= 1.1;
+                window.displacementFilter.uniforms.pan[0] -= mx;
+
+                var my = app.renderer.plugins.interaction.mouse.global.y - app.renderer.height / 2.0;
+                window.displacementFilter.uniforms.pan[1] += my;
+                window.displacementFilter.uniforms.pan[1] /= 1.1;
+                window.displacementFilter.uniforms.pan[1] -= my;
             }
         }
         );
@@ -477,9 +491,8 @@ displacementFilter.filterArea = app.renderer.screen;
             //rect.position.set(app.screen.width, app.screen.height);
 
 
-            
-                logo.width = app.renderer.screen.width;
-                logo.height = app.renderer.screen.height;
+            logo.width = app.renderer.screen.width;
+            logo.height = app.renderer.screen.height;
         }
 
         resize();
@@ -494,7 +507,6 @@ displacementFilter.filterArea = app.renderer.screen;
                 var baseTexture = new PIXI.BaseTexture(img);
                 var texture = new PIXI.Texture(baseTexture);
                 logo.setTexture(texture);
-
 
                 window.displacementFilter.uniforms.textureWidth = logo.texture.width;
                 window.displacementFilter.uniforms.textureHeight = logo.texture.height;
