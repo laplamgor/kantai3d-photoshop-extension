@@ -195,7 +195,10 @@ const float dmax = 1.0;
 #define MAXZOOM 11.0
 
 #define MAXSTEPS 600.0
-float steps = max(MAXSTEPS *length(offset *zoom), 30.0);
+
+
+float fit = min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]);
+float steps = max(MAXSTEPS *length(offset *zoom*fit), 30.0);
 
 void main(void)
 {
@@ -203,8 +206,8 @@ void main(void)
                                textureWidth / frameHeight )
                   * vec2(1, -1);
     mat2 baseVector =
-        mat2(vec2((0.5 - focus) * (offset * zoom) - (offset * zoom) / 2.0) * scale2,
-             vec2((0.5 - focus) * (offset * zoom) + (offset * zoom) / 2.0) * scale2);
+        mat2(vec2((0.5 - focus) * (offset * zoom*fit) - (offset * zoom*fit) / 2.0) * scale2,
+             vec2((0.5 - focus) * (offset * zoom*fit) + (offset * zoom*fit) / 2.0) * scale2);
 
 
     vec2 pos = (vTextureCoord);
