@@ -94,8 +94,18 @@ vec2 mapCoord2(vec2 coord)
 vec4 textureDiffuse(vec2 coord)
 {
     vec2 c = coord;
+    vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
 
-    if (coord[0] <= 0.0 || coord[0] >= 1.0 || coord[1] <= 0.0 || coord[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
+    c -= 0.5;                   // Normalize
+    c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
+    c /= scale;
+
+    c /= zoom;
+    c += 0.5;                   // Unnormalize
+
+
+
+    if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
     {
         return vec4(0.5, 0.5, 1.0, 0.0);
     }
@@ -108,17 +118,21 @@ vec4 textureDiffuse(vec2 coord)
 vec4 textureDepth(vec2 coord)
 {
     vec2 c = coord;
-    vec2 frame = vec2(frameWidth, frameHeight);
-    vec2 tex = vec2(textureWidth, textureHeight);
 
-    c = c  * frame  /  tex * textureScale ;
-    c = c + vec2(max(pan[0], 0.0), max(pan[1], 0.0)) /  tex * textureScale ;
+    vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
 
-    c = c / zoom;
-    if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
-    {
-        return vec4(0.0, 0.0, 0.0, 0.0);
-    }
+    c -= 0.5;                   // Normalize
+    c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
+    c /= scale;
+
+    c /= zoom;
+    c += 0.5;                   // Unnormalize
+
+
+    // if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
+    // {
+    //     return vec4(0.0, 0.0, 0.0, 0.0);
+    // }
     return texture2D(displacementMap, c);
 }
 
@@ -181,7 +195,10 @@ const float dmax = 1.0;
 #define MAXZOOM 11.0
 
 #define MAXSTEPS 600.0
-float steps = max(MAXSTEPS *length(offset *zoom), 30.0);
+
+
+float fit = min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]);
+float steps = max(MAXSTEPS *length(offset *zoom*fit), 30.0);
 
 void main(void)
 {
@@ -189,8 +206,8 @@ void main(void)
                                textureWidth / frameHeight )
                   * vec2(1, -1);
     mat2 baseVector =
-        mat2(vec2((0.5 - focus) * (offset * zoom) - (offset * zoom) / 2.0) * scale2,
-             vec2((0.5 - focus) * (offset * zoom) + (offset * zoom) / 2.0) * scale2);
+        mat2(vec2((0.5 - focus) * (offset * zoom*fit) - (offset * zoom*fit) / 2.0) * scale2,
+             vec2((0.5 - focus) * (offset * zoom*fit) + (offset * zoom*fit) / 2.0) * scale2);
 
 
     vec2 pos = (vTextureCoord);
@@ -250,22 +267,14 @@ void main(void)
             {
                 this.uniforms.dimensions[0] = input.sourceFrame.width;
                 this.uniforms.dimensions[1] = input.sourceFrame.height;
-                console.log(window.displacementFilter.uniforms.offset[1]);
 
                 this.uniforms.frameWidth = input.size.width;
                 this.uniforms.frameHeight = input.size.height;
-
-                logo.position﻿.x = -this.uniforms.pan[0];
-                logo.position﻿.y = -this.uniforms.pan[1];
             }
 
             this.uniforms.canvasSize = {};
             this.uniforms.canvasSize[0] = app.renderer.width;
             this.uniforms.canvasSize[1] = app.renderer.height;
-
-
-            logo.scale.set(this.uniforms.zoom);
-
 
             // draw the filter...
             filterManager.applyFilter(this, input, output);
@@ -298,13 +307,11 @@ void main(void)
 
         // window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
         window.displacementFilter = PIXI.DepthPerspectiveFilter;
-
         window.displacementFilter.uniforms.textureWidth = logo.texture.width;
         window.displacementFilter.uniforms.textureHeight = logo.texture.height;
         window.displacementFilter.uniforms.textureScale = 1.0;
         window.displacementFilter.padding = 0;
 
-        // window.displacementSprite.visible = false;
 
         window.displacementFilter.uniforms.pan = [0.0, 0.0];
 
@@ -378,19 +385,32 @@ void main(void)
                 if (window.displacementFilter.uniforms.zoom < 30.0)
                 {
                     window.displacementFilter.uniforms.zoom *= 1.1;
-                    window.displacementFilter.uniforms.pan[0] += app.renderer.plugins.interaction.mouse.global.x;
+
+                    var mx = app.renderer.plugins.interaction.mouse.global.x - app.renderer.width / 2.0;
+                    window.displacementFilter.uniforms.pan[0] += mx;
                     window.displacementFilter.uniforms.pan[0] *= 1.1;
-                    window.displacementFilter.uniforms.pan[0] -= app.renderer.plugins.interaction.mouse.global.x;
-                    window.displacementFilter.uniforms.pan[1] += app.renderer.plugins.interaction.mouse.global.y;
+                    window.displacementFilter.uniforms.pan[0] -= mx;
+
+                    var my = app.renderer.plugins.interaction.mouse.global.y - app.renderer.height / 2.0;
+                    window.displacementFilter.uniforms.pan[1] += my;
                     window.displacementFilter.uniforms.pan[1] *= 1.1;
-                    window.displacementFilter.uniforms.pan[1] -= app.renderer.plugins.interaction.mouse.global.y;
+                    window.displacementFilter.uniforms.pan[1] -= my;
+
                 }
             }
             else
             {
                 window.displacementFilter.uniforms.zoom /= 1.1;
-                window.displacementFilter.uniforms.pan[0] = (window.displacementFilter.uniforms.pan[0] + app.renderer.plugins.interaction.mouse.global.x) / 1.1 - app.renderer.plugins.interaction.mouse.global.x;
-                window.displacementFilter.uniforms.pan[1] = (window.displacementFilter.uniforms.pan[1] + app.renderer.plugins.interaction.mouse.global.y) / 1.1 - app.renderer.plugins.interaction.mouse.global.y;
+
+                var mx = app.renderer.plugins.interaction.mouse.global.x - app.renderer.width / 2.0;
+                window.displacementFilter.uniforms.pan[0] += mx;
+                window.displacementFilter.uniforms.pan[0] /= 1.1;
+                window.displacementFilter.uniforms.pan[0] -= mx;
+
+                var my = app.renderer.plugins.interaction.mouse.global.y - app.renderer.height / 2.0;
+                window.displacementFilter.uniforms.pan[1] += my;
+                window.displacementFilter.uniforms.pan[1] /= 1.1;
+                window.displacementFilter.uniforms.pan[1] -= my;
             }
         }
         );
@@ -404,13 +424,16 @@ void main(void)
 
                 if (isTilting)
                 {
-                    window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / logo.texture.width * 2);
-                    window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / logo.texture.height * 2);
-
-                    window.displacementFilter.uniforms.offset[0] =
-                        Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 1.0), -1.0);
-                    window.displacementFilter.uniforms.offset[1] =
-                        Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 1.0), -1.0);
+                    var radius = Math.min(app.renderer.width, app.renderer.height);
+                    window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / radius * 2);
+                    window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / radius * 2);
+                    
+                    var xy = Math.sqrt(window.displacementFilter.uniforms.offset[0] * window.displacementFilter.uniforms.offset[0] + window.displacementFilter.uniforms.offset[1] * window.displacementFilter.uniforms.offset[1]);
+                    if (xy/0.5 > 1)
+                    {
+                       window.displacementFilter.uniforms.offset[0] /= xy/0.5;
+                       window.displacementFilter.uniforms.offset[1] /= xy/0.5;
+                    }
 
                     tiltX = endx;
                     tiltY = endy;
@@ -460,6 +483,10 @@ void main(void)
             // area, this is more useful than view.width/height because
             // it handles resolution
             //rect.position.set(app.screen.width, app.screen.height);
+
+
+            logo.width = app.renderer.screen.width;
+            logo.height = app.renderer.screen.height;
         }
 
         resize();
@@ -474,7 +501,6 @@ void main(void)
                 var baseTexture = new PIXI.BaseTexture(img);
                 var texture = new PIXI.Texture(baseTexture);
                 logo.setTexture(texture);
-
 
                 window.displacementFilter.uniforms.textureWidth = logo.texture.width;
                 window.displacementFilter.uniforms.textureHeight = logo.texture.height;
