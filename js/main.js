@@ -172,10 +172,10 @@ vec4 normal(vec2 coord)
     float upD = textureDepth(coord - lineH).r;
     float downD = textureDepth(coord + lineH).r;
 
-    // if (textureDiffuse(coord)[3] < 1.0)
-    // {
-    //     return vec4(0.5,0.5,1.0,1.0);
-    // }
+    if (textureDiffuse(coord)[3] < 1.0)
+    {
+        return vec4(0.5,0.5,1.0,1.0);
+    }
 
     return vec4(0.5, 0.5, 1.0, 1.0) + vec4(leftD - rightD, upD - downD, 0.0, 0.0) * 100.0 * zoom;
 }
@@ -424,13 +424,16 @@ void main(void)
 
                 if (isTilting)
                 {
-                    window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / logo.texture.width * 2);
-                    window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / logo.texture.height * 2);
-
-                    window.displacementFilter.uniforms.offset[0] =
-                        Math.max(Math.min(window.displacementFilter.uniforms.offset[0], 1.0), -1.0);
-                    window.displacementFilter.uniforms.offset[1] =
-                        Math.max(Math.min(window.displacementFilter.uniforms.offset[1], 1.0), -1.0);
+                    var radius = Math.min(app.renderer.width, app.renderer.height);
+                    window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / radius * 2);
+                    window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / radius * 2);
+                    
+                    var xy = Math.sqrt(window.displacementFilter.uniforms.offset[0] * window.displacementFilter.uniforms.offset[0] + window.displacementFilter.uniforms.offset[1] * window.displacementFilter.uniforms.offset[1]);
+                    if (xy/0.5 > 1)
+                    {
+                       window.displacementFilter.uniforms.offset[0] /= xy/0.5;
+                       window.displacementFilter.uniforms.offset[1] /= xy/0.5;
+                    }
 
                     tiltX = endx;
                     tiltY = endy;
