@@ -50,9 +50,17 @@
 					<Menu>Depth Preview</Menu>
 					<Geometry>
 						<Size>
-							<Height>200</Height>
-							<Width>300</Width>
+							<Height>800</Height>
+							<Width>600</Width>
 						</Size>
+                        <MaxSize>
+                            <Height>1600</Height>
+                            <Width>1200</Width>
+                        </MaxSize>
+                        <MinSize>
+                            <Height>600</Height>
+                            <Width>450</Width>
+                        </MinSize>
 					</Geometry>
 				</UI>
 			</DispatchInfo>
