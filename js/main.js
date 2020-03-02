@@ -16,249 +16,250 @@
 
         var csInterface = new CSInterface();
 
+
         var script = `
-if (app.documents.length != 0) {
-  var doc= app.activeDocument;
+            if (app.documents.length != 0) {
+              var doc= app.activeDocument;
 
-  var opts, file;
-  opts = new ExportOptionsSaveForWeb();
-  opts.format = SaveDocumentType.PNG;
-  opts.quality = 100;
+              var opts, file;
+              opts = new ExportOptionsSaveForWeb();
+              opts.format = SaveDocumentType.PNG;
+              opts.PNG8 = true;
+              opts.quality = 0;
 
-  pngFile = new File("` + csInterface.getSystemPath(SystemPath.EXTENSION) + `" + "/depth_preview.png");
-  //pngFile = new File(app.activeDocument.path + "/depth_preview.png");
-  app.activeDocument.exportDocument(pngFile, ExportType.SAVEFORWEB, opts);
-}
+              pngFile = new File("` + csInterface.getSystemPath(SystemPath.EXTENSION) + `" + "/depth_preview.png");
+              //pngFile = new File(app.activeDocument.path + "/depth_preview.png");
+              app.activeDocument.exportDocument(pngFile, ExportType.SAVEFORWEB, opts);
+            }
             `;
 
         PIXI.DepthPerspectiveFilter = new PIXI.Filter(
                 `
-#ifdef GL_ES
-precision highp float;
-#endif
+            #ifdef GL_ES
+            precision highp float;
+            #endif
 
-attribute vec2 aVertexPosition;
-attribute vec2 aTextureCoord;
-varying vec2 vTextureCoord;
+            attribute vec2 aVertexPosition;
+            attribute vec2 aTextureCoord;
+            varying vec2 vTextureCoord;
 
-uniform mat3 projectionMatrix;
+            uniform mat3 projectionMatrix;
 
-void main(void)
-{
-    vTextureCoord = aTextureCoord;
-    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
-}
-                `, 
+            void main(void)
+            {
+                vTextureCoord = aTextureCoord;
+                gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+            }
+            `, 
                 `
-precision mediump float;
-uniform vec2 offset;
-uniform vec2 pan;
-uniform float zoom;
-uniform int displayMode;
+            precision mediump float;
+            uniform vec2 offset;
+            uniform vec2 pan;
+            uniform float zoom;
+            uniform int displayMode;
 
-uniform sampler2D uSampler;
-uniform sampler2D displacementMap;
+            uniform sampler2D uSampler;
+            uniform sampler2D displacementMap;
 
-uniform float textureScale;
-uniform vec2 textureSize;
-uniform float textureWidth;
-uniform float textureHeight;
-uniform float frameWidth;
-uniform float frameHeight;
-uniform vec2 canvasSize;
+            uniform float textureScale;
+            uniform vec2 textureSize;
+            uniform float textureWidth;
+            uniform float textureHeight;
+            uniform float frameWidth;
+            uniform float frameHeight;
+            uniform vec2 canvasSize;
 
-uniform vec4 filterArea;
-uniform vec4 filterClamp;
-
-
-varying vec2 vTextureCoord;
-varying vec4 vColor;
-uniform vec4 dimensions;
-uniform vec2 mapDimensions;
-uniform float scale;
-uniform float focus;
+            uniform vec4 filterArea;
+            uniform vec4 filterClamp;
 
 
-vec2 mapPan(vec2 coord)
-{
-    return vec2((coord[0]  + pan[0] / textureWidth / textureScale) / zoom,
-                (coord[1] + pan[1] / textureHeight / textureScale) / zoom);
-}
-
-vec2 mapCoord2(vec2 coord)
-{
-    return vec2(coord[0] * frameWidth / textureWidth / textureScale,
-                coord[1] * frameHeight / textureHeight / textureScale);
-}
-
-vec4 textureDiffuse(vec2 coord)
-{
-    vec2 c = coord;
-    vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
-
-    c -= 0.5;                   // Normalize
-    c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
-    c /= scale;
-
-    c /= zoom;
-    c += 0.5;                   // Unnormalize
+            varying vec2 vTextureCoord;
+            varying vec4 vColor;
+            uniform vec4 dimensions;
+            uniform vec2 mapDimensions;
+            uniform float scale;
+            uniform float focus;
 
 
+            vec2 mapPan(vec2 coord)
+            {
+                return vec2((coord[0]  + pan[0] / textureWidth / textureScale) / zoom,
+                            (coord[1] + pan[1] / textureHeight / textureScale) / zoom);
+            }
 
-    if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
-    {
-        return vec4(0.5, 0.5, 1.0, 0.0);
-    }
-    else
-    {
-        return texture2D(uSampler, c);
-    }
-}
+            vec2 mapCoord2(vec2 coord)
+            {
+                return vec2(coord[0] * frameWidth / textureWidth / textureScale,
+                            coord[1] * frameHeight / textureHeight / textureScale);
+            }
 
-vec4 textureDepth(vec2 coord)
-{
-    vec2 c = coord;
+            vec4 textureDiffuse(vec2 coord)
+            {
+                vec2 c = coord;
+                vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
 
-    vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
+                c -= 0.5;                   // Normalize
+                c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
+                c /= scale;
 
-    c -= 0.5;                   // Normalize
-    c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
-    c /= scale;
-
-    c /= zoom;
-    c += 0.5;                   // Unnormalize
-
-
-    // if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
-    // {
-    //     return vec4(0.0, 0.0, 0.0, 0.0);
-    // }
-    return texture2D(displacementMap, c);
-}
-
-vec4 grid(vec2 coord)
-{
-    float lineW = 1.0 / frameWidth / zoom;
-    float spaceW = lineW * 8.0;
-    float spaceW2 = lineW * 32.0;
-    float lineH = 1.0 / frameHeight / zoom;
-    float spaceH = lineH * 8.0;
-    float spaceH2 = lineH * 32.0;
-
-    if (texture2D(uSampler, coord)[3] < 1.0)
-    {
-        return vec4(0.0, 0.0, 0.0, 0.0);
-    }
-
-    if (mod(coord[0], spaceW2) < lineW || mod(coord[1], spaceH2) < lineH)
-    {
-        return vec4(0.75, 0.75, 0.75, 0.75);
-    }
-    if (mod(coord[0], spaceW) < lineW || mod(coord[1], spaceH) < lineH)
-    {
-        return vec4(0.5, 0.5, 0.5, 0.75);
-    }
-    return vec4(texture2D(displacementMap, mapCoord2(coord)).r);
-}
-
-vec4 normal(vec2 coord)
-{
-    vec2 lineW = vec2(0.5 / frameWidth, 0.0);
-    vec2 lineH = vec2(0.0, 0.5 / frameHeight);
+                c /= zoom;
+                c += 0.5;                   // Unnormalize
 
 
-    float leftD = textureDepth(coord - lineW).r;
-    float rightD = textureDepth(coord + lineW).r;
-    float upD = textureDepth(coord - lineH).r;
-    float downD = textureDepth(coord + lineH).r;
 
-    if (textureDiffuse(coord)[3] < 1.0)
-    {
-        return vec4(0.5,0.5,1.0,1.0);
-    }
+                if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
+                {
+                    return vec4(0.5, 0.5, 1.0, 0.0);
+                }
+                else
+                {
+                    return texture2D(uSampler, c);
+                }
+            }
 
-    return vec4(0.5, 0.5, 1.0, 1.0) + vec4(leftD - rightD, upD - downD, 0.0, 0.0) * 100.0 * zoom;
-}
+            vec4 textureDepth(vec2 coord)
+            {
+                vec2 c = coord;
 
-vec4 normalMixed(vec2 coord)
-{
-    return textureDiffuse(coord)  - vec4(0.5, 0.5, 1.0, 1.0) + normal(coord);
-}
+                vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
 
-const float compression = 1.0;
-const float dmin = 0.0;
-const float dmax = 1.0;
+                c -= 0.5;                   // Normalize
+                c = c * canvasSize + pan;   // Convert to pixel count, where origin is the center
+                c /= scale;
 
-// sqrt(2)
-#define MAXOFFSETLENGTH 1.41421356
-// 10 * 1.1
-#define MAXZOOM 11.0
-
-#define MAXSTEPS 600.0
+                c /= zoom;
+                c += 0.5;                   // Unnormalize
 
 
-float fit = min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]);
-float steps = max(MAXSTEPS *length(offset *zoom*fit), 30.0);
+                // if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
+                // {
+                //     return vec4(0.0, 0.0, 0.0, 0.0);
+                // }
+                return texture2D(displacementMap, c);
+            }
 
-void main(void)
-{
-    vec2 scale2 = scale * vec2(textureHeight / frameWidth,
-                               textureWidth / frameHeight )
-                  * vec2(1, -1);
-    mat2 baseVector =
-        mat2(vec2((0.5 - focus) * (offset * zoom*fit) - (offset * zoom*fit) / 2.0) * scale2,
-             vec2((0.5 - focus) * (offset * zoom*fit) + (offset * zoom*fit) / 2.0) * scale2);
+            vec4 grid(vec2 coord)
+            {
+                float lineW = 1.0 / frameWidth / zoom;
+                float spaceW = lineW * 8.0;
+                float spaceW2 = lineW * 32.0;
+                float lineH = 1.0 / frameHeight / zoom;
+                float spaceH = lineH * 8.0;
+                float spaceH2 = lineH * 32.0;
+
+                if (texture2D(uSampler, coord)[3] < 1.0)
+                {
+                    return vec4(0.0, 0.0, 0.0, 0.0);
+                }
+
+                if (mod(coord[0], spaceW2) < lineW || mod(coord[1], spaceH2) < lineH)
+                {
+                    return vec4(0.75, 0.75, 0.75, 0.75);
+                }
+                if (mod(coord[0], spaceW) < lineW || mod(coord[1], spaceH) < lineH)
+                {
+                    return vec4(0.5, 0.5, 0.5, 0.75);
+                }
+                return vec4(texture2D(displacementMap, mapCoord2(coord)).r);
+            }
+
+            vec4 normal(vec2 coord)
+            {
+                vec2 lineW = vec2(0.5 / frameWidth, 0.0);
+                vec2 lineH = vec2(0.0, 0.5 / frameHeight);
 
 
-    vec2 pos = (vTextureCoord);
-    mat2 vector = baseVector;
+                float leftD = textureDepth(coord - lineW).r;
+                float rightD = textureDepth(coord + lineW).r;
+                float upD = textureDepth(coord - lineH).r;
+                float downD = textureDepth(coord + lineH).r;
 
-    float dstep = compression / (steps - 1.0);
-    vec2 vstep = (vector[1] - vector[0]) / vec2((steps - 1.0));
+                if (textureDiffuse(coord)[3] < 1.0)
+                {
+                    return vec4(0.5,0.5,1.0,1.0);
+                }
 
-    vec2 posSumLast = vec2(0.0);
-    vec2 posSum = vec2(0.0);
+                return vec4(0.5, 0.5, 1.0, 1.0) + vec4(leftD - rightD, upD - downD, 0.0, 0.0) * 100.0 * zoom;
+            }
 
-    float weigth = 1.0;
-    float dpos;
-    float dposLast;
+            vec4 normalMixed(vec2 coord)
+            {
+                return textureDiffuse(coord)  - vec4(0.5, 0.5, 1.0, 1.0) + normal(coord);
+            }
 
-    for (float i = 0.0; i < MAXSTEPS * MAXOFFSETLENGTH * MAXZOOM; ++i)
-    {
-        vec2 vpos = pos + vector[1] - i * vstep;
-        dpos = 1.0 - i * dstep;
-        float depth = textureDepth(vpos).r;
+            const float compression = 1.0;
+            const float dmin = 0.0;
+            const float dmax = 1.0;
 
-        depth = clamp(depth, dmin, dmax);
+            // sqrt(2)
+            #define MAXOFFSETLENGTH 1.41421356
+            // 10 * 1.1
+            #define MAXZOOM 11.0
 
-        if (dpos > depth)
-        {
-            posSumLast = vpos;
-            dposLast = dpos;
-        }
-        else
-        {
-            posSum = vpos;
-            weigth = (depth - dposLast) / dstep;
-            break;
-        }
-    };
-    vec2 coord = (posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum;
-    if (displayMode == 0)
-    {
-        gl_FragColor = textureDiffuse(coord);
-    }
-    else if (displayMode == 1)
-    {
-        gl_FragColor = normal(coord);
-    }
-    else
-    {
-        gl_FragColor = normalMixed(coord);
-    }
+            #define MAXSTEPS 600.0
 
-}
-                `);
+
+            float fit = min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]);
+            float steps = max(MAXSTEPS *length(offset *zoom*fit), 30.0);
+
+            void main(void)
+            {
+                vec2 scale2 = scale * vec2(textureHeight / frameWidth,
+                                           textureWidth / frameHeight )
+                              * vec2(1, -1);
+                mat2 baseVector =
+                    mat2(vec2((0.5 - focus) * (offset * zoom*fit) - (offset * zoom*fit) / 2.0) * scale2,
+                         vec2((0.5 - focus) * (offset * zoom*fit) + (offset * zoom*fit) / 2.0) * scale2);
+
+
+                vec2 pos = (vTextureCoord);
+                mat2 vector = baseVector;
+
+                float dstep = compression / (steps - 1.0);
+                vec2 vstep = (vector[1] - vector[0]) / vec2((steps - 1.0));
+
+                vec2 posSumLast = vec2(0.0);
+                vec2 posSum = vec2(0.0);
+
+                float weigth = 1.0;
+                float dpos;
+                float dposLast;
+
+                for (float i = 0.0; i < MAXSTEPS * MAXOFFSETLENGTH * MAXZOOM; ++i)
+                {
+                    vec2 vpos = pos + vector[1] - i * vstep;
+                    dpos = 1.0 - i * dstep;
+                    float depth = textureDepth(vpos).r;
+
+                    depth = clamp(depth, dmin, dmax);
+
+                    if (dpos > depth)
+                    {
+                        posSumLast = vpos;
+                        dposLast = dpos;
+                    }
+                    else
+                    {
+                        posSum = vpos;
+                        weigth = (depth - dposLast) / dstep;
+                        break;
+                    }
+                };
+                vec2 coord = (posSum - posSumLast) * -clamp(weigth * 0.5 + 0.5, 0.0, 1.5) + posSum;
+                if (displayMode == 0)
+                {
+                    gl_FragColor = textureDiffuse(coord);
+                }
+                else if (displayMode == 1)
+                {
+                    gl_FragColor = normal(coord);
+                }
+                else
+                {
+                    gl_FragColor = normalMixed(coord);
+                }
+
+            }`);
 
         PIXI.DepthPerspectiveFilter.apply = function (filterManager, input, output)
         {
@@ -311,7 +312,6 @@ void main(void)
         window.displacementFilter.uniforms.textureHeight = logo.texture.height;
         window.displacementFilter.uniforms.textureScale = 1.0;
         window.displacementFilter.padding = 0;
-
 
         window.displacementFilter.uniforms.pan = [0.0, 0.0];
 
@@ -427,12 +427,12 @@ void main(void)
                     var radius = Math.min(app.renderer.width, app.renderer.height);
                     window.displacementFilter.uniforms.offset[0] -= ((endx - tiltX) / radius * 2);
                     window.displacementFilter.uniforms.offset[1] += ((endy - tiltY) / radius * 2);
-                    
+
                     var xy = Math.sqrt(window.displacementFilter.uniforms.offset[0] * window.displacementFilter.uniforms.offset[0] + window.displacementFilter.uniforms.offset[1] * window.displacementFilter.uniforms.offset[1]);
-                    if (xy/0.5 > 1)
+                    if (xy / 0.5 > 1)
                     {
-                       window.displacementFilter.uniforms.offset[0] /= xy/0.5;
-                       window.displacementFilter.uniforms.offset[1] /= xy/0.5;
+                        window.displacementFilter.uniforms.offset[0] /= xy / 0.5;
+                        window.displacementFilter.uniforms.offset[1] /= xy / 0.5;
                     }
 
                     tiltX = endx;
@@ -573,7 +573,6 @@ void main(void)
             }
             );
         }
-
     }
     init();
 }
