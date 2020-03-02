@@ -350,8 +350,6 @@
                 isPanning = true;
                 break;
             case 3:
-                window.displacementFilter.uniforms.displayMode++;
-                window.displacementFilter.uniforms.displayMode %= 3;
                 break;
             default:
                 alert('You have a strange Mouse!');
@@ -490,6 +488,99 @@
         }
 
         resize();
+
+
+        var menuJson = `{
+                            "menu": [
+                                {
+                                    "id": "basicTextureMode",
+                                    "label": "Basic Texture",
+                                    "enabled": true,
+                                    "checkable": true,
+                                    "checked": true
+                                },
+                                {
+                                    "id": "normalMapMode",
+                                    "label": "Normal Map",
+                                    "enabled": true,
+                                    "checkable": true,
+                                    "checked": false
+                                },
+                                {
+                                    "id": "mixedMode",
+                                    "label": "Mixed",
+                                    "enabled": true,
+                                    "checkable": true,
+                                    "checked": false
+                                },
+                                {
+                                    "label": "---"
+                                },
+                                {
+                                    "id": "menuItemId2",
+                                    "label": "testExample2",
+                                    "menu": [
+                                        {
+                                            "id": "menuItemId2-1",
+                                            "label": "testExample2-1",
+                                            "menu": [
+                                                {
+                                                    "id": "menuItemId2-1-1",
+                                                    "label": "testExample2-1-1",
+                                                    "enabled": false,
+                                                    "checkable": true,
+                                                    "checked": true
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "id": "menuItemId2-2",
+                                            "label": "testExample2-2",
+                                            "enabled": true,
+                                            "checkable": true,
+                                            "checked": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "---"
+                                },
+                                {
+                                    "id": "menuItemId3",
+                                    "label": "testExample3",
+                                    "enabled": false,
+                                    "checkable": true,
+                                    "checked": false
+                                }
+                            ]
+                        }`;
+        csInterface.setContextMenuByJSON(menuJson, contextMenuCallback);
+
+        function contextMenuCallback(menuID)
+        {
+            if (menuID === "basicTextureMode" || menuID === "normalMapMode" || menuID === "mixedMode") {
+                changeDisplayMode(menuID);
+            }
+        }
+
+        function changeDisplayMode(mode){
+            csInterface.updateContextMenuItem("basicTextureMode", true, false);
+            csInterface.updateContextMenuItem("normalMapMode", true, false);
+            csInterface.updateContextMenuItem("mixedMode", true, false);
+            csInterface.updateContextMenuItem(mode, true, true);
+
+            switch(mode) {
+              case "basicTextureMode":
+                window.displacementFilter.uniforms.displayMode = 0;
+                break;
+              case "normalMapMode":
+                window.displacementFilter.uniforms.displayMode = 1;
+                break;
+              case "mixedMode":
+                window.displacementFilter.uniforms.displayMode = 2;
+            }
+        }
+
 
         // Load the image as the default
         csInterface.evalScript("app.activeDocument.fullName.parent.fsName.replace(/\\\\/g, '/')", function (path)
