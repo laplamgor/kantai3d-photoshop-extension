@@ -517,39 +517,10 @@
                                     "label": "---"
                                 },
                                 {
-                                    "id": "menuItemId2",
-                                    "label": "testExample2",
-                                    "menu": [
-                                        {
-                                            "id": "menuItemId2-1",
-                                            "label": "testExample2-1",
-                                            "menu": [
-                                                {
-                                                    "id": "menuItemId2-1-1",
-                                                    "label": "testExample2-1-1",
-                                                    "enabled": false,
-                                                    "checkable": true,
-                                                    "checked": true
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "id": "menuItemId2-2",
-                                            "label": "testExample2-2",
-                                            "enabled": true,
-                                            "checkable": true,
-                                            "checked": true
-                                        }
-                                    ]
-                                },
-                                {
-                                    "label": "---"
-                                },
-                                {
-                                    "id": "menuItemId3",
-                                    "label": "testExample3",
-                                    "enabled": false,
-                                    "checkable": true,
+                                    "id": "reposition",
+                                    "label": "Reposition",
+                                    "enabled": true,
+                                    "checkable": false,
                                     "checked": false
                                 }
                             ]
@@ -560,6 +531,12 @@
         {
             if (menuID === "basicTextureMode" || menuID === "normalMapMode" || menuID === "mixedMode") {
                 changeDisplayMode(menuID);
+            }
+            if (menuID === "reposition") {
+                updatePreview();
+                window.displacementFilter.uniforms.pan = [0.0, 0.0];
+                window.displacementFilter.uniforms.offset = [0.0, 0.0];
+                window.displacementFilter.uniforms.zoom = 1.0;
             }
         }
 
