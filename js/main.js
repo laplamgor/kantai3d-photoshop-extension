@@ -650,6 +650,39 @@
             }
             );
         }
+
+
+        function adjustAllLevels() {
+            var script = `
+                var allTopLevelLayers = app.activeDocument.layers;
+                loopLayers(allTopLevelLayers);
+
+                function loopLayers(gp) {
+                    var layer;
+                    for(var i=0; i<gp.length; i++) {
+                        layer = gp[i];
+                        if(layer.typename == 'LayerSet') {
+                            loopLayers(layer.layers);
+                        } else {
+                            changeLayer(layer);
+                        }
+                    }
+                }
+
+                function changeLayer(layer) {
+                    try {
+                        if (layer.visible) {
+                            app.activeDocument.activeLayer = layer;
+                            layer.adjustLevels(64, 191, 1.0, 0, 255,);
+                        }
+                    } catch(e) {
+                        activeDocument.selection.deselect();
+                    }
+                }
+            `;
+
+
+        }
     }
     init();
 }
