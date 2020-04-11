@@ -16,7 +16,6 @@
 
         var csInterface = new CSInterface();
 
-
         var script = `
             if (app.documents.length != 0) {
               var doc= app.activeDocument;
@@ -93,7 +92,8 @@
                             coord[1] * frameHeight / textureHeight / textureScale);
             }
 
-            vec4 textureDiffuse(vec2 coord)
+
+            vec4 textureDiffuseNoBg(vec2 coord)
             {
                 vec2 c = coord;
                 vec2 scale = textureSize * ( min(canvasSize[0]/textureSize[0], canvasSize[1]/textureSize[1]) );
@@ -106,15 +106,20 @@
                 c += 0.5;                   // Unnormalize
 
 
-
-                if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0 || (texture2D(uSampler, c).a < 1.0))
+                if (c[0] <= 0.0 || c[0] >= 1.0 || c[1] <= 0.0 || c[1] >= 1.0)
                 {
-                    return vec4(0.5, 0.5, 1.0, 0.0);
-                }
-                else
-                {
+                    return vec4(0.0);
+                } else {
                     return texture2D(uSampler, c);
                 }
+            }
+
+
+            vec4 textureDiffuse(vec2 coord)
+            {
+                vec4 withoutBg = textureDiffuseNoBg(coord);
+
+                return withoutBg * withoutBg[3] + vec4(0.5, 0.5, 1.0, 1.0) * (1.0-withoutBg[3]);
             }
 
             vec4 textureDepth(vec2 coord)
@@ -230,6 +235,10 @@
                     vec2 vpos = pos + vector[1] - i * vstep;
                     dpos = 1.0 - i * dstep;
                     float depth = textureDepth(vpos).r;
+
+                    if (textureDiffuseNoBg(vpos)[3] == 0.0) {
+                        depth = 0.0;
+                    }
 
                     depth = clamp(depth, dmin, dmax);
 
