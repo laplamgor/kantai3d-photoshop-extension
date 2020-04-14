@@ -569,27 +569,31 @@
 
 
         // Load the image as the default
-        csInterface.evalScript("app.activeDocument.fullName.parent.fsName.replace(/\\\\/g, '/')", function (path)
-        {
-            var url = path + "/base_preview.png?_=" + (new Date().getTime());
-            var img = new Image();
-            img.onload = function ()
+        function loadBaseImage() {
+            csInterface.evalScript("app.activeDocument.fullName.fsName.replace(/\\\\/g, '/')", function (path)
             {
-                var baseTexture = new PIXI.BaseTexture(img);
-                var texture = new PIXI.Texture(baseTexture);
-                logo.setTexture(texture);
+                var url = path.replace('_depth', '').replace('.psd', '.png') + "?_=" + (new Date().getTime());
+                var img = new Image();
+                img.onload = function ()
+                {
+                    var baseTexture = new PIXI.BaseTexture(img);
+                    var texture = new PIXI.Texture(baseTexture);
+                    logo.setTexture(texture);
 
-                window.displacementFilter.uniforms.textureWidth = logo.texture.width;
-                window.displacementFilter.uniforms.textureHeight = logo.texture.height;
+                    window.displacementFilter.uniforms.textureWidth = logo.texture.width;
+                    window.displacementFilter.uniforms.textureHeight = logo.texture.height;
 
-                window.displacementFilter.uniforms.textureSize = [logo.texture.width, logo.texture.height];
+                    window.displacementFilter.uniforms.textureSize = [logo.texture.width, logo.texture.height];
 
-                window.displacementFilter.uniforms.textureScale = 1.0;
+                    window.displacementFilter.uniforms.textureScale = 1.0;
 
+                }
+                img.src = url;
             }
-            img.src = url;
+            );
         }
-        );
+
+        loadBaseImage();
 
         csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (id)
         {
