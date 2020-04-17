@@ -526,6 +526,63 @@
                                     "label": "---"
                                 },
                                 {
+                                    "id": "scaleDepth",
+                                    "label": "Scale Depth",
+                                    "enabled": true,
+                                    "checkable": false,
+                                    "checked": false,
+                                     "menu": [
+                                        {
+                                            "id": "scaleDepth*2",
+                                            "label": "×2.0",
+                                            "enabled": true,
+                                            "checkable": false,
+                                            "checked": false
+                                        },
+                                        {
+                                            "id": "scaleDepth*1.3",
+                                            "label": "×1.3",
+                                            "enabled": true,
+                                            "checkable": false,
+                                            "checked": false
+                                        },
+                                        {
+                                            "id": "scaleDepth*1.1",
+                                            "label": "×1.1",
+                                            "enabled": true,
+                                            "checkable": false,
+                                            "checked": false
+                                        },
+                                        {
+                                            "label": "---"
+                                        },
+                                        {
+                                            "id": "scaleDepth/1.1",
+                                            "label": "÷1.1",
+                                            "enabled": true,
+                                            "checkable": false,
+                                            "checked": false
+                                        },
+                                        {
+                                            "id": "scaleDepth/1.3",
+                                            "label": "÷1.3",
+                                            "enabled": true,
+                                            "checkable": false,
+                                            "checked": false
+                                        },
+                                        {
+                                            "id": "scaleDepth/2",
+                                            "label": "÷2.0",
+                                            "enabled": true,
+                                            "checkable": false,
+                                            "checked": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "---"
+                                },
+                                {
                                     "id": "reposition",
                                     "label": "Reposition",
                                     "enabled": true,
@@ -546,6 +603,26 @@
                 window.displacementFilter.uniforms.pan = [0.0, 0.0];
                 window.displacementFilter.uniforms.offset = [0.0, 0.0];
                 window.displacementFilter.uniforms.zoom = 1.0;
+            }
+            switch(menuID) {
+              case "scaleDepth*2":
+                adjustAllLevels(2.0);
+                break;
+              case "scaleDepth*1.3":
+                adjustAllLevels(1.3);
+                break;
+              case "scaleDepth*1.1":
+                adjustAllLevels(1.1);
+                break;
+              case "scaleDepth/1.1":
+                adjustAllLevels(1.0/1.1);
+                break;
+              case "scaleDepth/1.3":
+                adjustAllLevels(1.0/1.3);
+                break;
+              case "scaleDepth/2":
+                adjustAllLevels(0.5);
+                break;
             }
         }
 
@@ -656,7 +733,22 @@
         }
 
 
-        function adjustAllLevels() {
+        function adjustAllLevels(multiplier) {
+            var fromStart = 0;
+            var fromEnd = 255;
+            var toStart = 0;
+            var toEnd = 255;
+
+            if (multiplier > 1.0) {
+                var offset = Math.floor(127.0 / multiplier);
+                fromStart = 127 - offset;
+                fromEnd = 128 + offset;
+            } else {
+                var offset = Math.floor(127.0 * multiplier);
+                toStart = 127 - offset;
+                toEnd = 128 + offset;
+            }
+
             var script = `
                 var allTopLevelLayers = app.activeDocument.layers;
                 loopLayers(allTopLevelLayers);
@@ -677,7 +769,7 @@
                     try {
                         if (layer.visible) {
                             app.activeDocument.activeLayer = layer;
-                            layer.adjustLevels(64, 191, 1.0, 0, 255,);
+                            layer.adjustLevels(${fromStart}, ${fromEnd}, 1.0, ${toStart}, ${toEnd});
                         }
                     } catch(e) {
                         activeDocument.selection.deselect();
@@ -685,7 +777,7 @@
                 }
             `;
 
-
+            csInterface.evalScript(script, function (path) {});
         }
     }
     init();
