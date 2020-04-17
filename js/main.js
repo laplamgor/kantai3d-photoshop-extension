@@ -672,12 +672,20 @@
 
         loadBaseImage();
 
+        // Register events
         csInterface.evalScript(`stringIDToTypeID( "toolModalStateChanged" )`, function (id)
         {
-            register(id); // toolModalStateChanged, almost everything
+            register(id); // toolModalStateChanged, almost everything done with toolbox
             register(1936483188); // 'slct' (e.g. change history state)
             register(1399355168); // 'Shw' (show layer)
             register(1214521376); // 'Hd  ' (hide layer)
+        }
+        );
+
+        // Register events for undo+redo
+        csInterface.evalScript(`stringIDToTypeID( "invokeCommand" )`, function (id)
+        {
+            register(id); // invokeCommand, almost everything done with shortcut
         }
         );
 
@@ -694,24 +702,6 @@
 
         function eventCallback(csEvent)
         {
-            // alert(csEvent.data);
-            // try
-            // {
-            //     if (typeof csEvent.data === "string")
-            //     {
-            //         var eventData = csEvent.data.replace("ver1,{", "{");
-            //         var eventDataObject = JSON.parse(eventData);
-            //         csEvent.data = eventDataObject;
-            //     }
-            // }
-            // catch (e)
-            // {
-            //     console.log("PhotoshopCallbackUnique catch: " + e);
-            // }
-
-            // if (csEvent.data && csEvent.data.eventID == 1936483188 && csEvent.data.eventData.null._ref == 'historyState') {
-            //     alert(csEvent.data.eventID);
-            // }
             updatePreview();
         }
 
