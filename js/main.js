@@ -7,12 +7,6 @@
     function init()
     {
         themeManager.init();
-        $("#aply").click(function ()
-        {
-            var result = window.cep.fs.showOpenDialog(false, false, "Test Dialog", "", ["png", "jpg"]);
-            alert(result.data);
-        }
-        );
 
         var csInterface = new CSInterface();
 
@@ -283,30 +277,21 @@
             );
 
 
-        //~/AppData/Local/Temp/depth_preview.png
-        //http://192.168.1.245/3d.jpg`
-        var logo = new PIXI.Sprite.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png");
+        var depthMapImage = new PIXI.Sprite.fromImage("");
 
-        // window.displacementSprite = PIXI.Sprite.fromImage(csInterface.getSystemPath( SystemPath.EXTENSION ) + "/depth_preview.png");
         window.displacementFilter = PIXI.DepthPerspectiveFilter;
-        window.displacementFilter.uniforms.textureWidth = logo.texture.width;
-        window.displacementFilter.uniforms.textureHeight = logo.texture.height;
         window.displacementFilter.uniforms.textureScale = 1.0;
         window.displacementFilter.padding = 0;
 
         window.displacementFilter.uniforms.pan = [0.0, 0.0];
-
-        window.displacementFilter.uniforms.displacementMap = PIXI.Texture.fromImage(csInterface.getSystemPath(SystemPath.EXTENSION)
-                 + "/depth_preview.png");
         window.displacementFilter.uniforms.scale = 1.0;
         window.displacementFilter.uniforms.focus = 0.5;
         window.displacementFilter.uniforms.offset = [0.0, 0.0];
 
         window.displacementFilter.uniforms.displayMode = 0;
 
-        //app.stage.filterArea = app.screen;
         app.stage.filters = [window.displacementFilter];
-        app.stage.addChild(logo);
+        app.stage.addChild(depthMapImage);
 
         var tiltX;
         var tiltY;
@@ -396,7 +381,7 @@
 
         function step(timestamp)
         {
-            if (logo && logo.texture && app.renderer.view.style)
+            if (depthMapImage && depthMapImage.texture && app.renderer.view.style)
             {
                 var endx = app.renderer.plugins.interaction.mouse.global.x;
                 var endy = app.renderer.plugins.interaction.mouse.global.y;
@@ -433,19 +418,6 @@
 
         window.requestAnimationFrame(step);
 
-        // window.onresize = function (event){
-        // var w = window.innerWidth;
-        // var h = window.innerHeight;
-        // //this part resizes the canvas but keeps ratio the same
-        //     app.renderer.view.style.width = w + "px";
-        //   app.renderer.view.style.height = h + "px";
-        //    //this part adjusts the ratio:
-        //    app.renderer.resize(w,h);
-
-
-        //    alert(w);
-        // }
-
         // Listen for window resize events
         window.addEventListener('resize', resize);
 
@@ -457,15 +429,9 @@
             c.prop('width', window.innerWidth);
             c.prop('height', window.innerHeight);
             app.renderer.resize(window.innerWidth, window.innerHeight);
-            //alert(window.innerWidth);
-            // You can use the 'screen' property as the renderer visible
-            // area, this is more useful than view.width/height because
-            // it handles resolution
-            //rect.position.set(app.screen.width, app.screen.height);
 
-
-            logo.width = app.renderer.screen.width;
-            logo.height = app.renderer.screen.height;
+            depthMapImage.width = app.renderer.screen.width;
+            depthMapImage.height = app.renderer.screen.height;
         }
 
         resize();
@@ -634,18 +600,21 @@
         function loadBaseImage() {
             csInterface.evalScript("app.activeDocument.fullName.fsName.replace(/\\\\/g, '/')", function (path)
             {
+                if (path.toLowerCase().indexOf("_depth.psd") === -1) {
+                    return; // Only generate PNG depth map if matching file name format
+                }
                 var url = path.replace('_depth', '').replace('.psd', '.png') + "?_=" + (new Date().getTime());
                 var img = new Image();
                 img.onload = function ()
                 {
                     var baseTexture = new PIXI.BaseTexture(img);
                     var texture = new PIXI.Texture(baseTexture);
-                    logo.setTexture(texture);
+                    depthMapImage.setTexture(texture);
 
-                    window.displacementFilter.uniforms.textureWidth = logo.texture.width;
-                    window.displacementFilter.uniforms.textureHeight = logo.texture.height;
+                    window.displacementFilter.uniforms.textureWidth = depthMapImage.texture.width;
+                    window.displacementFilter.uniforms.textureHeight = depthMapImage.texture.height;
 
-                    window.displacementFilter.uniforms.textureSize = [logo.texture.width, logo.texture.height];
+                    window.displacementFilter.uniforms.textureSize = [depthMapImage.texture.width, depthMapImage.texture.height];
 
                     window.displacementFilter.uniforms.textureScale = 1.0;
 
