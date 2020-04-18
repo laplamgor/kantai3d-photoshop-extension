@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="6.0" ExtensionBundleId="ai.kant.depthpreview" ExtensionBundleVersion="1.0.0"
+<ExtensionManifest Version="6.0" ExtensionBundleId="com.kantai3d.depthpreview" ExtensionBundleVersion="1.0.0"
 		ExtensionBundleName="DepthPreview" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<Author><![CDATA[]]></Author>
 	<Abstract><![CDATA[]]></Abstract>
 	<ExtensionList>
-		<Extension Id="ai.kant.depthpreview" Version="1.0.0" />
+		<Extension Id="com.kantai3d.depthpreview" Version="1.0.0" />
 	</ExtensionList>
 	<ExecutionEnvironment>
 		<HostList>
@@ -36,7 +36,7 @@
 		</RequiredRuntimeList>
 	</ExecutionEnvironment>
 	<DispatchInfoList>
-		<Extension Id="ai.kant.depthpreview">
+		<Extension Id="com.kantai3d.depthpreview">
 			<DispatchInfo >
 				<Resources>
 				<MainPath>./index.html</MainPath>
