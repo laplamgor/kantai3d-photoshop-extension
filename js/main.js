@@ -16,22 +16,6 @@
 
         var csInterface = new CSInterface();
 
-        var script = `
-            if (app.documents.length != 0) {
-              var doc= app.activeDocument;
-
-              var opts, file;
-              opts = new ExportOptionsSaveForWeb();
-              opts.format = SaveDocumentType.PNG;
-              opts.PNG8 = true;
-              opts.quality = 0;
-
-              pngFile = new File("` + csInterface.getSystemPath(SystemPath.EXTENSION) + `" + "/depth_preview.png");
-              //pngFile = new File(app.activeDocument.path + "/depth_preview.png");
-              app.activeDocument.exportDocument(pngFile, ExportType.SAVEFORWEB, opts);
-            }
-            `;
-
         PIXI.DepthPerspectiveFilter = new PIXI.Filter(
                 `
             #ifdef GL_ES
@@ -666,6 +650,9 @@
 
                 }
                 img.src = url;
+
+                currentDepthPngPath = path.replace('.psd', '.png');
+                updatePreview();
             }
             );
         }
@@ -705,11 +692,27 @@
             updatePreview();
         }
 
+        var currentDepthPngPath = "";
         function updatePreview()
         {
-            csInterface.evalScript(script, function (res)
+            var scriptSavePng = `
+                if (app.documents.length != 0) {
+                  var doc= app.activeDocument;
+
+                  var opts, file;
+                  opts = new ExportOptionsSaveForWeb();
+                  opts.format = SaveDocumentType.PNG;
+                  opts.PNG8 = true;
+                  opts.quality = 0;
+
+                  pngFile = new File("${currentDepthPngPath}");
+                  app.activeDocument.exportDocument(pngFile, ExportType.SAVEFORWEB, opts);
+                }
+                `;
+
+            csInterface.evalScript(scriptSavePng, function (res)
             {
-                var u = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png?_=" + (new Date().getTime());
+                var u = currentDepthPngPath + "?_=" + (new Date().getTime());
                 var img = new Image();
                 img.onload = function ()
                 {
@@ -739,7 +742,7 @@
                 toEnd = 128 + offset;
             }
 
-            var script = `
+            var scriptScale = `
                 var allTopLevelLayers = app.activeDocument.layers;
                 loopLayers(allTopLevelLayers);
 
@@ -767,7 +770,7 @@
                 }
             `;
 
-            csInterface.evalScript(script, function (path) {});
+            csInterface.evalScript(scriptScale, function (path) {});
         }
     }
     init();
