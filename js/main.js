@@ -121,31 +121,6 @@
                 return texture2D(displacementMap, c);
             }
 
-            vec4 grid(vec2 coord)
-            {
-                float lineW = 1.0 / frameWidth / zoom;
-                float spaceW = lineW * 8.0;
-                float spaceW2 = lineW * 32.0;
-                float lineH = 1.0 / frameHeight / zoom;
-                float spaceH = lineH * 8.0;
-                float spaceH2 = lineH * 32.0;
-
-                if (texture2D(uSampler, coord)[3] < 1.0)
-                {
-                    return vec4(0.0, 0.0, 0.0, 0.0);
-                }
-
-                if (mod(coord[0], spaceW2) < lineW || mod(coord[1], spaceH2) < lineH)
-                {
-                    return vec4(0.75, 0.75, 0.75, 0.75);
-                }
-                if (mod(coord[0], spaceW) < lineW || mod(coord[1], spaceH) < lineH)
-                {
-                    return vec4(0.5, 0.5, 0.5, 0.75);
-                }
-                return vec4(texture2D(displacementMap, mapCoord2(coord)).r);
-            }
-
             vec4 normal(vec2 coord)
             {
                 vec2 lineW = vec2(0.5 / frameWidth, 0.0);
@@ -157,7 +132,7 @@
                 float upD = textureDepth(coord - lineH).r;
                 float downD = textureDepth(coord + lineH).r;
 
-                if (textureDiffuse(coord)[3] < 1.0)
+                if (textureDiffuseNoBg(coord)[3] < 1.0)
                 {
                     return vec4(0.5,0.5,1.0,1.0);
                 }
