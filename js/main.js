@@ -282,18 +282,6 @@
             }
             );
 
-        var path = csInterface.getSystemPath(SystemPath.EXTENSION) + "/depth_preview.png";
-
-        var result = window.cep.fs.readFile(path);
-
-        if (result.err == 0)
-        {
-            //alert(result.data); // displays file content
-        }
-        else
-        {
-            alert("fail" + result.err);
-        }
 
         //~/AppData/Local/Temp/depth_preview.png
         //http://192.168.1.245/3d.jpg`
@@ -568,7 +556,7 @@
                                 },
                                 {
                                     "id": "reposition",
-                                    "label": "Reposition",
+                                    "label": "Refresh",
                                     "enabled": true,
                                     "checkable": false,
                                     "checked": false
@@ -583,7 +571,7 @@
                 changeDisplayMode(menuID);
             }
             if (menuID === "reposition") {
-                updatePreview();
+                loadBaseImage()
                 window.displacementFilter.uniforms.pan = [0.0, 0.0];
                 window.displacementFilter.uniforms.offset = [0.0, 0.0];
                 window.displacementFilter.uniforms.zoom = 1.0;
