@@ -696,6 +696,9 @@
         var currentDepthPngPath = "";
         function updatePreview()
         {
+            if (currentDepthPngPath.toLowerCase().indexOf("_depth.png") === -1) {
+                return; // Only generate PNG depth map if matching file name format
+            }
             var scriptSavePng = `
                 if (app.documents.length != 0) {
                   var doc= app.activeDocument;
