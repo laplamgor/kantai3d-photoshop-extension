@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ExtensionList>
-    <Extension Id="ai.kant.depthpreview">
+    <Extension Id="com.kantai3d.depthpreview">
         <HostList>
                <Host Name="PHXS" Port="8088"/>
                <Host Name="PHSP" Port="8088"/>
