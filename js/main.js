@@ -560,6 +560,16 @@
                                     "enabled": true,
                                     "checkable": false,
                                     "checked": false
+                                },
+                                {
+                                    "label": "---"
+                                },
+                                {
+                                    "id": "about",
+                                    "label": "About this extension",
+                                    "enabled": true,
+                                    "checkable": false,
+                                    "checked": false
                                 }
                             ]
                         }`;
@@ -577,24 +587,27 @@
                 window.displacementFilter.uniforms.zoom = 1.0;
             }
             switch(menuID) {
-              case "scaleDepth*2":
-                adjustAllLevels(2.0);
-                break;
-              case "scaleDepth*1.3":
-                adjustAllLevels(1.3);
-                break;
-              case "scaleDepth*1.1":
-                adjustAllLevels(1.1);
-                break;
-              case "scaleDepth/1.1":
-                adjustAllLevels(1.0/1.1);
-                break;
-              case "scaleDepth/1.3":
-                adjustAllLevels(1.0/1.3);
-                break;
-              case "scaleDepth/2":
-                adjustAllLevels(0.5);
-                break;
+                case "scaleDepth*2":
+                    adjustAllLevels(2.0);
+                    break;
+                case "scaleDepth*1.3":
+                    adjustAllLevels(1.3);
+                    break;
+                case "scaleDepth*1.1":
+                    adjustAllLevels(1.1);
+                    break;
+                case "scaleDepth/1.1":
+                    adjustAllLevels(1.0/1.1);
+                    break;
+                case "scaleDepth/1.3":
+                    adjustAllLevels(1.0/1.3);
+                    break;
+                case "scaleDepth/2":
+                    adjustAllLevels(0.5);
+                    break;
+                case "about":
+                    cep.util.openURLInDefaultBrowser("https://github.com/laplamgor/kantai3d-photoshop-extension");
+                    break;
             }
         }
 
