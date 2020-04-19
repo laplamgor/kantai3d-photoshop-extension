@@ -4,8 +4,10 @@ Depth Preview is an extension for Adobe Photoshop CC to preview parallax occlusi
 
 
 ## Table of Contents
-
-
+1. [Requirement](#requirement)
+2. [How to install](#how-to-install)
+3. [Depth map file requirement](#depth-map-file-requirement)
+4. [How to draw depth map](#how-to-draw-depth-map)
 
 ## Requirement
 - Adobe Photoshop CC 2020 or newer
@@ -41,3 +43,31 @@ When it's opened, it should look like this without any base texture and depth da
 
 It's done! You can freely resize and rearrange the window just like any other window in Photoshop.
 
+
+## Depth map file requirement
+
+### File name
+To preview parallax occlusion mapping effect, you need two files in the same working directory:
+- A PSD file that with namne suffix `_depth` and containing the depth map
+- A PNG file that without suffix `_depth` and containing basic texture
+
+Below is an example of the file names:
+
+![0464_5596_mqlroxfnufpz_depth](https://user-images.githubusercontent.com/11514317/79690104-55d04900-828b-11ea-8b8a-7127de08510d.png)
+
+### File dimension
+The two files must have the exact same dimension.
+
+### Depth map specification
+
+There are many different standards outside to represent depth data in an image.
+Depth Preview represents Kantai 3D represent in the following standard:
+- The depth map is a grayscale image
+- sRGB middle gray (#808080) is the original depth (i.e. zero parallax offset)
+- Any pixel brighter than sRGB middle gray is considered closer to the camera
+- Any pixel darker than sRGB middle gray is considered farer away from the camera
+- The depth scale is linear (i.e. depth distance between #888888 vs #808080 and #080808 vs #000000 are the same)
+
+## How to draw depth map
+There is not enough space and time to include all depth map drawing tutuorials and tips here.
+For more example, please refer to the Kantai 3D depth map repository.
