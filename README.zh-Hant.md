@@ -8,8 +8,8 @@ Depth Preview是一個Adobe Photoshop CC專用的插件。 可用於繪製深度
 ## 目錄
 1. [軟件需求](#軟件需求)
 2. [安裝方法](#安裝方法)
-3. [Depth map file requirement](#depth-map-file-requirement)
-4. [How to draw depth map](#how-to-draw-depth-map)
+3. [深度圖格式](#深度圖格式)
+4. [繪製深度圖](#繪製深度圖)
 
 ## 軟件需求
 - Adobe Photoshop CC 2020或更新版本 (舊版本未經測試)
