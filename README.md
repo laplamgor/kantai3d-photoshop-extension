@@ -1,3 +1,5 @@
+Other Languages: [繁體中文](https://github.com/laplamgor/kantai3d-photoshop-extension/blob/master/README.zh-Hant.md)
+
 # Depth Preview
 Depth Preview is an extension for Adobe Photoshop CC to preview parallax occlusion mapping effect when editing a depth map. The parallax occlusion mapping effect is exactly same as Kantai 3D Kancolle Mod.
 
@@ -41,7 +43,7 @@ When it's opened, it should look like this without any base texture and depth da
 
 ![photoshop-2](https://user-images.githubusercontent.com/11514317/79686808-ac328d00-8275-11ea-8e8c-febde0096222.png)
 
-It's done! You can freely resize and rearrange the window just like any other window in Photoshop.
+It's done! You can freely resize and rearrange the window just like any other panel in Photoshop.
 
 
 ## Depth map file requirement
